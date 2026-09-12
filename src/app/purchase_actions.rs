@@ -56,6 +56,7 @@ impl App {
         self.current_auction = None;
         self.screen = Screen::Portfolio;
         self.status = "Property settled. Check the margin before buying upgrades.".to_string();
+        self.play_sound(crate::audio::SoundEffect::Hammer);
         self.refresh_campaign_outcome();
     }
 

@@ -13,6 +13,7 @@ impl App {
             self.draw_title_settings();
         } else {
             self.draw_title_menu();
+            self.draw_title_status();
         }
     }
 
@@ -46,6 +47,7 @@ impl App {
             ButtonTone::Ghost,
         ) {
             self.title_settings_open = true;
+            self.open_settings();
         }
         y += 62.0;
         if button(
@@ -59,31 +61,36 @@ impl App {
     }
 
     fn draw_title_settings(&mut self) {
-        let button_x = 92.0;
-        let button_w = 328.0;
-        let fullscreen_label = if self.fullscreen_enabled {
-            "Fullscreen: On"
-        } else {
-            "Fullscreen: Off"
-        };
+        let panel = Rect::new(58.0, 28.0, 650.0, 630.0);
+        soft_panel(panel);
+        label("Settings", panel.x + 28.0, panel.y + 48.0, 30, TEXT_BRIGHT);
+        self.draw_settings_editor(Rect::new(
+            panel.x + 24.0,
+            panel.y + 72.0,
+            panel.w - 48.0,
+            panel.h - 88.0,
+        ));
+    }
 
-        if button(
-            Rect::new(button_x, 386.0, button_w, 48.0),
-            fullscreen_label,
-            true,
-            ButtonTone::Primary,
-        ) {
-            self.toggle_fullscreen();
-        }
-
-        if button(
-            Rect::new(button_x, 448.0, button_w, 48.0),
-            "Back",
-            true,
-            ButtonTone::Secondary,
-        ) {
-            self.title_settings_open = false;
-        }
+    fn draw_title_status(&self) {
+        let is_error = self.status.starts_with("Load failed:");
+        let panel = Rect::new(92.0, 574.0, 520.0, 72.0);
+        soft_panel(panel);
+        label(
+            if is_error { "Load status" } else { "Desk note" },
+            panel.x + 16.0,
+            panel.y + 23.0,
+            16,
+            if is_error { NEGATIVE } else { ACCENT },
+        );
+        label_fit(
+            &self.status,
+            panel.x + 16.0,
+            panel.y + 50.0,
+            panel.w - 32.0,
+            16,
+            TEXT_BRIGHT,
+        );
     }
 }
 

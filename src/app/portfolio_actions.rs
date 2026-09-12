@@ -47,6 +47,7 @@ impl App {
                 format_money(interest_after)
             )
         };
+        self.play_sound(crate::audio::SoundEffect::Button);
     }
 
     pub(crate) fn refinance_owned_property(&mut self, property_id: PropertyId) {
@@ -89,6 +90,7 @@ impl App {
                 format_money(interest_after)
             )
         };
+        self.play_sound(crate::audio::SoundEffect::Button);
     }
 
     pub(crate) fn lease_property(&mut self, property_id: PropertyId) {
@@ -128,6 +130,7 @@ impl App {
             format_money(rent),
             format_money(fee)
         );
+        self.play_sound(crate::audio::SoundEffect::Button);
     }
 
     pub(crate) fn end_property_tenancy(&mut self, property_id: PropertyId) {

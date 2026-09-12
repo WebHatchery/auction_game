@@ -1,0 +1,8 @@
+{
+  "target": "webhatchery/auction-house-tycoon",
+  "channels": {
+    "html5": "html5-demo",
+    "windows": "windows"
+  },
+  "user_version": "0.1.0"
+}

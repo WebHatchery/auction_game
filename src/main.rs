@@ -1,17 +1,6 @@
-#![allow(clippy::too_many_arguments)]
-
+use auction_game::{app::App, audio, ui};
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
-
-mod app;
-mod data;
-mod model;
-mod save;
-mod screens;
-mod sim;
-mod ui;
-
-use app::App;
 
 const UI_FONT_SIZES: &[u16] = &[13, 14, 15, 16, 17, 18, 20, 22, 26, 32, 38];
 const LARGE_MONEY_FONT_SAMPLES: &[(u16, &str)] = &[(74, "$0,123456789")];
@@ -43,12 +32,15 @@ async fn main() {
         .expect("large money styles should prewarm");
     let title_background =
         Texture2D::from_file_with_format(include_bytes!("../auction_house_title.png"), None);
-    let mut app = App::new(title_background);
+    let audio = audio::load_audio()
+        .await
+        .expect("procedural auction audio should load");
+    let mut app = App::new(title_background, audio);
 
     // Present the populated font atlas before any dense UI frame is batched.
     // Macroquad otherwise lets the first screen share a frame with atlas uploads,
     // which can leave stale glyph coordinates after the texture grows.
-    clear_background(crate::ui::BACKGROUND);
+    clear_background(ui::BACKGROUND);
     macroquad_toolkit::ui::draw_default_ui_font_atlas_warmup(UI_FONT_SIZES);
     macroquad_toolkit::ui::draw_default_ui_font_text_atlas_warmup(LARGE_MONEY_FONT_SAMPLES);
     next_frame().await;

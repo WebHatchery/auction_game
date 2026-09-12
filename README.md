@@ -52,11 +52,11 @@ The campaign closes as soon as all three conditions are true—there is no need 
 
 - Mouse/touch: every required action has a visible button or property card.
 
-## Current Scope
+## Release candidate
 
-Playable research-to-auction-to-portfolio loop with six market pulses, twelve authored properties, live rival reactions, rentals, renovations, sale outcomes, and three-part campaign progress.
+Release-candidate research-to-auction-to-portfolio loop with six market pulses, twelve authored properties, live rival reactions, rentals, renovations, sale outcomes, and three-part campaign progress. Audio feedback and persisted volume/readability settings are available from the title screen or in-game menu.
 
 Properties, bidder profiles, upgrades, and market events are data-driven from
 `assets/game_data.json`.
 
-Open work is tracked in `TODO.md`.
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the release summary, [CREDITS.md](CREDITS.md) for shipped asset attribution, [LICENSE](LICENSE) for licensing, and [SUPPORT.md](SUPPORT.md) for bug reports and support details. The catalog remains Playable until the final external and manual release gates are complete.

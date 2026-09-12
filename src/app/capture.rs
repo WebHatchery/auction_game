@@ -31,6 +31,16 @@ impl App {
                 self.screen = Screen::Dashboard;
                 self.esc_menu_open = true;
                 self.esc_settings_open = true;
+                self.open_settings();
+            }
+            "title_settings" => {
+                self.screen = Screen::Title;
+                self.title_settings_open = true;
+                self.open_settings();
+            }
+            "title_load_missing" => {
+                self.screen = Screen::Title;
+                self.load_game_from_title();
             }
             "listings" => {
                 self.start_new_game();

@@ -8,16 +8,17 @@ impl App {
     pub(crate) fn draw_esc_menu(&mut self) {
         draw_rectangle(0.0, 0.0, ui_width(), ui_height(), MENU_SHADE);
         if button(
-            Rect::new(16.0, 16.0, 64.0, 36.0),
+            Rect::new(16.0, 12.0, 72.0, 44.0),
             "Close",
             true,
             ButtonTone::Secondary,
         ) {
             self.esc_menu_open = false;
             self.esc_settings_open = false;
+            self.settings_session = None;
         }
 
-        let panel = Rect::new(ui_width() * 0.5 - 180.0, 118.0, 360.0, 418.0);
+        let panel = Rect::new(ui_width() * 0.5 - 290.0, 28.0, 580.0, 620.0);
         soft_panel(panel);
         label(
             if self.esc_settings_open {
@@ -68,6 +69,7 @@ impl App {
             ButtonTone::Ghost,
         ) {
             self.esc_settings_open = true;
+            self.open_settings();
         }
         y += 56.0;
         if button(
@@ -90,30 +92,11 @@ impl App {
     }
 
     fn draw_esc_settings(&mut self, panel: Rect) {
-        let button_x = panel.x + 36.0;
-        let button_w = panel.w - 72.0;
-        let fullscreen_label = if self.fullscreen_enabled {
-            "Fullscreen: On"
-        } else {
-            "Fullscreen: Off"
-        };
-
-        if button(
-            Rect::new(button_x, panel.y + 150.0, button_w, 44.0),
-            fullscreen_label,
-            true,
-            ButtonTone::Primary,
-        ) {
-            self.toggle_fullscreen();
-        }
-
-        if button(
-            Rect::new(button_x, panel.y + 224.0, button_w, 44.0),
-            "Back",
-            true,
-            ButtonTone::Secondary,
-        ) {
-            self.esc_settings_open = false;
-        }
+        self.draw_settings_editor(Rect::new(
+            panel.x + 24.0,
+            panel.y + 72.0,
+            panel.w - 48.0,
+            panel.h - 88.0,
+        ));
     }
 }

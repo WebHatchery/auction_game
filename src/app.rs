@@ -1,3 +1,4 @@
+use crate::audio::SoundEffect;
 use crate::data::GameData;
 use crate::model::{
     CampaignStatus, ContractorTier, Player, Property, PropertyId, ResearchLevel, ResearchReport,
@@ -18,6 +19,11 @@ use crate::sim::sale_sim::{simulate_sale, MarketingPlan, ReserveChoice, SaleResu
 use crate::sim::valuation::net_worth;
 use crate::ui::*;
 use macroquad::prelude::*;
+use macroquad_toolkit::audio::SoundManager;
+use macroquad_toolkit::settings::{
+    GameSettings, SettingsFeatures, SettingsPanel, SettingsPanelAction, SettingsSession,
+};
+use macroquad_toolkit::ui::Pointer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -53,6 +59,10 @@ pub struct App {
     pub(crate) esc_menu_open: bool,
     pub(crate) esc_settings_open: bool,
     pub(crate) fullscreen_enabled: bool,
+    pub(crate) settings: GameSettings,
+    pub(crate) settings_session: Option<SettingsSession>,
+    pub(crate) settings_panel: SettingsPanel,
+    pub(crate) audio: SoundManager<SoundEffect>,
     pub(crate) data: GameData,
     pub(crate) player: Player,
     pub(crate) available_properties: Vec<Property>,
@@ -77,14 +87,21 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(title_background: Texture2D) -> Self {
+    pub fn new(title_background: Texture2D, mut audio: SoundManager<SoundEffect>) -> Self {
         let data = GameData::load();
+        let settings = GameSettings::load(crate::save::GAME_NAME);
+        settings.apply_display();
+        audio.apply_settings(&settings, true);
         let mut app = Self {
             title_background,
             title_settings_open: false,
             esc_menu_open: false,
             esc_settings_open: false,
-            fullscreen_enabled: false,
+            fullscreen_enabled: settings.fullscreen,
+            settings,
+            settings_session: None,
+            settings_panel: SettingsPanel::default(),
+            audio,
             data,
             player: Player::new(),
             available_properties: Vec::new(),
@@ -115,6 +132,7 @@ impl App {
         if self.screen != Screen::Title && is_key_pressed(KeyCode::Escape) {
             if self.esc_settings_open {
                 self.esc_settings_open = false;
+                self.settings_session = None;
             } else {
                 self.esc_menu_open = !self.esc_menu_open;
             }
@@ -222,7 +240,7 @@ impl App {
     fn draw_header(&mut self) {
         draw_rectangle(0.0, 0.0, ui_width(), 68.0, PANEL_DARK);
         if button(
-            Rect::new(16.0, 16.0, 64.0, 36.0),
+            Rect::new(16.0, 12.0, 72.0, 44.0),
             "Menu",
             true,
             ButtonTone::Ghost,
@@ -252,7 +270,7 @@ impl App {
             .unwrap_or(true);
 
         if button(
-            Rect::new(x, 18.0, 130.0, 34.0),
+            Rect::new(x, 12.0, 130.0, 44.0),
             "Dashboard",
             nav_enabled,
             ButtonTone::Ghost,
@@ -261,7 +279,7 @@ impl App {
         }
         x += 142.0;
         if button(
-            Rect::new(x, 18.0, 120.0, 34.0),
+            Rect::new(x, 12.0, 120.0, 44.0),
             "Listings",
             nav_enabled,
             ButtonTone::Ghost,
@@ -270,7 +288,7 @@ impl App {
         }
         x += 132.0;
         if button(
-            Rect::new(x, 18.0, 120.0, 34.0),
+            Rect::new(x, 12.0, 120.0, 44.0),
             "Portfolio",
             nav_enabled,
             ButtonTone::Ghost,
@@ -322,6 +340,7 @@ impl App {
         self.title_settings_open = false;
         self.esc_menu_open = false;
         self.esc_settings_open = false;
+        self.settings_session = None;
         self.refresh_available_properties();
     }
 
@@ -330,11 +349,75 @@ impl App {
         self.title_settings_open = false;
         self.esc_menu_open = false;
         self.esc_settings_open = false;
+        self.settings_session = None;
     }
 
-    pub(crate) fn toggle_fullscreen(&mut self) {
-        self.fullscreen_enabled = !self.fullscreen_enabled;
-        set_fullscreen(self.fullscreen_enabled);
+    pub(crate) fn open_settings(&mut self) {
+        self.settings_session = Some(SettingsSession::new(
+            self.settings.clone(),
+            GameSettings::default(),
+        ));
+        self.settings_panel = SettingsPanel::default();
+    }
+
+    pub(crate) fn draw_settings_editor(&mut self, rect: Rect) {
+        let pointer = Pointer::read(|position| {
+            vec2(
+                position.x * ui_width() / screen_width().max(1.0),
+                position.y * ui_height() / screen_height().max(1.0),
+            )
+        });
+        let action = if let Some(session) = self.settings_session.as_mut() {
+            self.settings_panel.draw(
+                rect,
+                pointer,
+                session,
+                SettingsFeatures {
+                    audio: true,
+                    fullscreen: true,
+                    text_scale: true,
+                    ..Default::default()
+                },
+            )
+        } else {
+            SettingsPanelAction::Cancel
+        };
+
+        match action {
+            SettingsPanelAction::Apply => self.commit_settings(),
+            SettingsPanelAction::Cancel => {
+                self.settings_session = None;
+                self.title_settings_open = false;
+                self.esc_settings_open = false;
+            }
+            SettingsPanelAction::None => {}
+        }
+    }
+
+    fn commit_settings(&mut self) {
+        let Some(session) = self.settings_session.as_mut() else {
+            return;
+        };
+        match session.commit(crate::save::GAME_NAME) {
+            Ok(()) => {
+                self.settings = session.draft.clone();
+                self.settings.apply_display();
+                self.fullscreen_enabled = self.settings.fullscreen;
+                self.audio.apply_settings(&self.settings, true);
+                self.settings_session = None;
+                self.title_settings_open = false;
+                self.esc_settings_open = false;
+                self.status = "Settings saved.".to_string();
+                self.play_sound(SoundEffect::Button);
+            }
+            Err(error) => {
+                self.status = format!("Settings failed to save: {error}");
+            }
+        }
+    }
+
+    pub(crate) fn play_sound(&self, effect: SoundEffect) {
+        self.audio.play_sfx(effect, 0.72);
     }
 
     pub(crate) fn buy_research(&mut self, property_id: PropertyId, level: ResearchLevel) {
@@ -374,6 +457,7 @@ impl App {
             property.address,
             format_money(self.walkaway_price)
         );
+        self.play_sound(SoundEffect::Button);
     }
 
     pub(crate) fn start_auction(&mut self, property_id: PropertyId) {
@@ -407,6 +491,7 @@ impl App {
         self.screen = Screen::Auction;
         self.status =
             "Registration complete. Review the terms, then tap START AUCTION CALLS.".to_string();
+        self.play_sound(SoundEffect::Button);
     }
 
     pub(crate) fn buy_upgrade(&mut self, property_id: PropertyId, upgrade_id: &str) {
@@ -467,6 +552,7 @@ impl App {
             project.weeks_total,
             format_money(quote.total_cost)
         );
+        self.play_sound(SoundEffect::Button);
     }
 
     pub(crate) fn sell_property(&mut self, property_id: PropertyId, choice: ReserveChoice) {
@@ -629,6 +715,7 @@ impl App {
                 )
             }
         };
+        self.play_sound(SoundEffect::Week);
     }
 
     pub(crate) fn refresh_available_properties(&mut self) {

@@ -15,7 +15,7 @@
   "controls": [
     {
       "key": "Mouse / Touch",
-      "desc": "Every required research, auction, and portfolio action has a visible control"
+      "desc": "Every required research, auction, portfolio, save, and settings action has a visible touch target"
     }
   ],
   "details": [

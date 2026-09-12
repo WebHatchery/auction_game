@@ -122,16 +122,19 @@ impl App {
                     self.status =
                         "Bidding is live. Tap RAISE, ASSERT, WAIT & READ ROOM, or WALK AWAY."
                             .to_string();
+                    self.play_sound(crate::audio::SoundEffect::Button);
                 }
             }
             Some(AuctionUiAction::Bid) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     place_player_bid(auction);
+                    self.play_sound(crate::audio::SoundEffect::Bid);
                 }
             }
             Some(AuctionUiAction::JumpBid) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     self.status = place_player_jump_bid(auction);
+                    self.play_sound(crate::audio::SoundEffect::Bid);
                 }
             }
             Some(AuctionUiAction::Hold) => {
@@ -143,11 +146,13 @@ impl App {
             Some(AuctionUiAction::WalkAway) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     stop_player_bidding(auction);
+                    self.play_sound(crate::audio::SoundEffect::Button);
                 }
             }
             Some(AuctionUiAction::QuickResolve) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     quick_resolve_auction(auction);
+                    self.play_sound(crate::audio::SoundEffect::Hammer);
                 }
             }
             Some(AuctionUiAction::Settle) => {

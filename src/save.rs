@@ -11,7 +11,7 @@ use macroquad_toolkit::persistence::{load_from_slot, save_to_slot};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-const GAME_NAME: &str = "auction_house_tycoon";
+pub(crate) const GAME_NAME: &str = "auction_house_tycoon";
 const QUICK_SLOT: &str = "quicksave";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -87,13 +87,26 @@ impl App {
                 self.status = "Game loaded.".to_string();
             }
             Err(error) => {
-                self.status = format!("Load failed: {error}");
+                self.status = load_failure_status(&error);
             }
         }
     }
 
     pub(crate) fn load_game_from_title(&mut self) {
-        let _ = self.apply_saved_game();
+        match self.apply_saved_game() {
+            Ok(()) => {
+                self.esc_menu_open = false;
+                self.esc_settings_open = false;
+                self.status = "Game loaded.".to_string();
+            }
+            Err(error) => {
+                self.screen = Screen::Title;
+                self.title_settings_open = false;
+                self.esc_menu_open = false;
+                self.esc_settings_open = false;
+                self.status = load_failure_status(&error);
+            }
+        }
     }
 
     fn apply_saved_game(&mut self) -> Result<(), String> {
@@ -120,6 +133,9 @@ impl App {
         self.walkaway_style = save.walkaway_style;
         self.status = save.status;
         self.fullscreen_enabled = save.fullscreen_enabled;
+        self.settings.fullscreen = save.fullscreen_enabled;
+        self.settings.apply_display();
+        self.audio.apply_settings(&self.settings, true);
         set_fullscreen(self.fullscreen_enabled);
         self.title_settings_open = false;
         self.esc_menu_open = false;
@@ -138,6 +154,10 @@ impl App {
 
 fn default_auction_registrations() -> u8 {
     WEEKLY_AUCTION_REGISTRATIONS
+}
+
+fn load_failure_status(error: &str) -> String {
+    format!("Load failed: {error}")
 }
 
 #[cfg(test)]

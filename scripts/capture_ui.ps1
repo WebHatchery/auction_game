@@ -6,7 +6,7 @@
     Thin wrapper around the shared macroquad-toolkit capture script. Builds the
     debug exe and drives it through the env-var capture hook
     (AUCTION_GAME_CAPTURE_*) provided by macroquad_toolkit::capture in
-    src/main.rs. Named scenes cover the title, briefing, listings, research,
+    src/main.rs. Named scenes cover the title, missing-save feedback, title settings, briefing, listings, research,
     live auction phases and outcomes, portfolio decisions, weekly ledgers,
     sales, and both campaign conclusions. Unknown scene names fail loudly.
 

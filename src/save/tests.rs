@@ -24,3 +24,19 @@ fn an_older_hammer_debrief_gains_empty_portfolio_underwriting_fields() {
     assert_eq!(debrief.weekly_rent, 0);
     assert_eq!(debrief.weekly_rental_cashflow, 0);
 }
+
+#[test]
+fn missing_quicksave_is_explained_on_the_title_screen() {
+    assert_eq!(
+        load_failure_status("No save found for slot: quicksave"),
+        "Load failed: No save found for slot: quicksave"
+    );
+}
+
+#[test]
+fn invalid_quicksave_is_explained_on_the_title_screen() {
+    assert_eq!(
+        load_failure_status("Deserialization error: missing field `player`"),
+        "Load failed: Deserialization error: missing field `player`"
+    );
+}
