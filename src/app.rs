@@ -70,6 +70,8 @@ pub struct App {
     pub(crate) week: u32,
     pub(crate) market_index: usize,
     pub(crate) screen: Screen,
+    pub(crate) auction_result_open: bool,
+    pub(crate) auction_focus: Option<usize>,
     pub(crate) auction_notes_open: bool,
     pub(crate) auction_read: Option<(String, f32)>,
     pub(crate) auction_beat: Option<(String, f32)>,
@@ -112,6 +114,8 @@ impl App {
             week: 1,
             market_index: 0,
             screen: Screen::Title,
+            auction_result_open: false,
+            auction_focus: None,
             auction_notes_open: false,
             auction_read: None,
             auction_beat: None,
@@ -447,6 +451,8 @@ impl App {
         else {
             return;
         };
+        self.auction_result_open = false;
+        self.auction_focus = None;
         self.auction_notes_open = false;
         self.auction_beat = None;
         self.auction_read = None;

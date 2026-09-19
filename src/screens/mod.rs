@@ -1,8 +1,11 @@
 pub mod auction;
+mod auction_console;
+mod auction_context;
 mod auction_debrief;
 mod auction_lobby;
 mod auction_property_panel;
 mod auction_room_panel;
+mod auction_scene;
 mod auction_stage;
 pub mod auction_widgets;
 pub mod briefing;

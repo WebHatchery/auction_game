@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 use macroquad_toolkit::capture;
 
 const UI_FONT_SIZES: &[u16] = &[13, 14, 15, 16, 17, 18, 20, 22, 26, 32, 38];
-const LARGE_MONEY_FONT_SAMPLES: &[(u16, &str)] = &[(74, "$0,123456789")];
+const LARGE_MONEY_FONT_SAMPLES: &[(u16, &str)] = &[(74, "$0,123456789"), (80, "$0,123456789")];
 
 fn window_conf() -> Conf {
     // Hand-built Conf means no automatic arming: without this the capture run

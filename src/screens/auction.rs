@@ -3,7 +3,7 @@ use crate::model::{Auction, AuctionStatus};
 use crate::screens::auction_debrief::draw_purchase_debrief;
 use crate::screens::auction_lobby::{draw_auction_day_lobby, AuctionLobbyAction};
 use crate::screens::auction_property_panel::draw_auction_property_panel;
-use crate::screens::auction_stage::draw_live_stage;
+use crate::screens::auction_stage::{draw_hammer, draw_live_stage};
 use crate::screens::Screen;
 use crate::sim::auction_events::{
     accept_post_auction_offer, post_auction_offer, test_vendor_at_passed_in_price, vendor_stance,
@@ -23,6 +23,8 @@ use macroquad::prelude::*;
 
 pub(super) enum AuctionUiAction {
     ToggleNotes,
+    ReviewOutcome,
+    FocusRival(usize),
     BeginAuction,
     Bid,
     JumpBid,
@@ -69,7 +71,7 @@ impl App {
         let center = Rect::new(352.0, 92.0, ui_width() - 380.0, panel_h);
 
         let live = auction.is_running() && auction.has_started;
-        if !live {
+        if !live && (auction.is_running() || self.auction_result_open) {
             draw_auction_property_panel(
                 left,
                 &auction,
@@ -93,10 +95,23 @@ impl App {
         } else if auction.is_running() {
             action = draw_live_stage(self, &auction, finance);
         } else if let Some(status) = auction.status.clone() {
-            action = self.draw_auction_result(center, &auction, status);
+            action = if self.auction_result_open {
+                self.draw_auction_result(center, &auction, status)
+            } else {
+                draw_hammer(self, &auction)
+            };
         }
 
         match action {
+            Some(AuctionUiAction::ReviewOutcome) => self.auction_result_open = true,
+            Some(AuctionUiAction::FocusRival(index)) => {
+                self.auction_focus = if self.auction_focus == Some(index) {
+                    None
+                } else {
+                    Some(index)
+                };
+            }
+
             Some(AuctionUiAction::ToggleNotes) => {
                 self.auction_notes_open = !self.auction_notes_open
             }
@@ -111,13 +126,19 @@ impl App {
             }
             Some(AuctionUiAction::Bid) => {
                 if let Some(auction) = self.current_auction.as_mut() {
+                    self.auction_read = None;
                     place_player_bid(auction);
+                    self.auction_beat =
+                        Some(("Your paddle rises. The room turns to you.".to_string(), 4.0));
                     self.play_sound(crate::audio::SoundEffect::Bid);
                 }
             }
             Some(AuctionUiAction::JumpBid) => {
                 if let Some(auction) = self.current_auction.as_mut() {
+                    self.auction_read = None;
                     self.status = place_player_jump_bid(auction);
+                    self.auction_beat =
+                        Some(("A double step. You challenge the room.".to_string(), 4.0));
                     self.play_sound(crate::audio::SoundEffect::Bid);
                 }
             }

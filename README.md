@@ -4,24 +4,36 @@ Auction House Tycoon is a property strategy game about doing the work before Sat
 
 Winning an auction is not automatically good. The real challenge is knowing what a property is worth, when to stop bidding, and whether a renovation will improve the deal or just make a loss prettier.
 
-## Auction-first flow
+## The auction room
 
-Scout -> Research -> Register -> Auction -> Outcome -> Recover. Scout is the
-main way into bidding; Recover and Portfolio support the next Saturday.
+The live auction is a pixel-art room: a visible auctioneer at the rostrum,
+seated rivals with raised or lowered paddles, and a bidding desk in front of
+you. The centre connects the current leader, price, changing auctioneer calls,
+reactions and your controls. No workflow navigation appears during bidding.
 
-The live room gives the bid and current call the main stage. Rival counters and
-exits appear briefly, with names, archetypes, states and short tells alongside.
-Financial guardrails show your limit, cash and bank room after the next bid,
-and expected margin. PROPERTY NOTES opens the researched reserve and rental
-forecast without stopping the room.
+Tap the large RAISE paddle for one step. ASSERT is a once-per-room jump that
+can rattle investors or provoke emotional bidders. WAIT & READ ROOM yields
+tempo for an observation, shown briefly as a last read. WALK AWAY sits beside
+the menu, away from bidding controls, and becomes prominent at your limit.
+Mouse and touch releases use the toolkit's shared pointer handling.
 
-RAISE is a single step; ASSERT is a once-per-room double step that can provoke
-emotional rivals. WAIT & READ ROOM invites a response and keeps the last
-observation readable for six seconds. WALK AWAY becomes prominent at your
-limit. While leading, watch the room rather than bidding against yourself.
-Calls progress from steady interest through slowing, final calls, going once
-and going twice; only the last six seconds show a clock. A late bid may reopen
-the calls using the existing overtime rules.
+Rivals have distinct pixel portraits, archetypes, behaviour and live tells.
+Tap a rival to study its current tell and your prior encounters. PROPERTY
+NOTES expands the catalogue beside the stage, without stopping the room.
+
+A pressure rail positions the current bid against the researched value band
+and your walk-away limit. The catalogue subordinates finance headroom and
+estimated margin; detailed cash and bank figures live behind notes. These
+remain estimates, not the rivals' hidden budgets.
+
+As the room slows, the auctioneer changes cadence. Final calls tighten the
+spotlight, raise the gavel and count the calls visually. A precise clock only
+appears in the last six seconds. Late bids reopen the calls through the
+existing overtime rules. After the hammer, stay in the room for the result,
+then tap REVIEW PURCHASE, REVIEW OUTCOME or TALK TO THE AGENT.
+
+Scout -> Research -> Register -> Auction -> Outcome -> Recover remains the
+campaign structure, explained outside the live auction.
 
 ## Gameplay
 

@@ -62,7 +62,8 @@ impl App {
             "detail_compact" => self.seed_property_detail_capture(6),
             "detail_premium" => self.seed_property_detail_capture(4),
             "detail_large_block" => self.seed_property_detail_capture(11),
-            "auction" | "auction_notes" | "auction_limit" => {
+            "auction" | "auction_notes" | "auction_limit" | "auction_rival" | "auction_twice"
+            | "auction_out" => {
                 self.start_new_game();
                 if let Some(property) = self.available_properties.first().cloned() {
                     self.start_auction(property.id);
@@ -70,7 +71,14 @@ impl App {
                         begin_auction_calls(auction);
                     }
                     self.auction_notes_open = scene == "auction_notes";
+                    self.auction_focus = (scene == "auction_rival").then_some(2);
                     if let Some(auction) = self.current_auction.as_mut() {
+                        if scene == "auction_twice" {
+                            auction.seconds_remaining = 2.8;
+                        }
+                        if scene == "auction_out" {
+                            auction.is_player_active = false;
+                        }
                         if scene == "auction_limit" {
                             auction.current_bid = auction.player_walkaway_price;
                         }

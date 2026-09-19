@@ -1,0 +1,11 @@
+{
+  "phases": ["THE ROOM IS OPEN", "PADDLES UP", "THE ROOM IS SLOWING", "FINAL CALLS", "GOING ONCE", "GOING TWICE"],
+  "calls": [
+    ["Opening at {bid}. Looking for {next}.", "An opening bid. Who starts us?"],
+    ["I have {bid}. Looking for {next}.", "At {bid}. Can I see {next}?", "The bid is {bid}. Who's next?"],
+    ["All done? All finished?", "Take your time. But not too much."],
+    ["Any advance on {bid}?", "Last opportunity. Are we all done?"],
+    ["Going once... any further interest?"],
+    ["Going twice. Last chance."]
+  ]
+}

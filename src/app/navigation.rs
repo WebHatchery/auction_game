@@ -17,22 +17,40 @@ impl App {
             self.esc_settings_open = false;
         }
         if self.screen == Screen::Auction {
-            label("THE AUCTION ROOM", 108.0, 40.0, 18, TEXT_DIM);
             label(
                 if self
                     .current_auction
                     .as_ref()
                     .is_some_and(|auction| !auction.is_running())
                 {
-                    "Scout  /  Research  /  Register  /  Auction  /  OUTCOME  /  Recover"
+                    "SATURDAY / THE HAMMER"
                 } else {
-                    "Scout  /  Research  /  Register  /  AUCTION  /  Outcome  /  Recover"
+                    "SATURDAY / LIVE AUCTION"
                 },
-                420.0,
+                244.0,
                 40.0,
-                16,
+                17,
                 TEXT_DIM,
             );
+            if let Some(auction) = self.current_auction.as_ref() {
+                label(
+                    if !auction.is_running() {
+                        "HAMMER DOWN"
+                    } else if auction.on_market_announced {
+                        "ON THE MARKET / SELLING"
+                    } else {
+                        "RESERVE NOT YET MET"
+                    },
+                    740.0,
+                    40.0,
+                    17,
+                    if auction.on_market_announced {
+                        POSITIVE
+                    } else {
+                        TEXT_DIM
+                    },
+                );
+            }
             return;
         }
         label("Auction House Tycoon", 94.0, 42.0, 30, TEXT_BRIGHT);

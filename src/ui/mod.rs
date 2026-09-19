@@ -1,3 +1,4 @@
+pub mod auction_view;
 use crate::model::{Condition, Property};
 use macroquad::prelude::*;
 
@@ -54,12 +55,13 @@ pub fn ui_height() -> f32 {
     UI_HEIGHT
 }
 
-fn mouse_position_ui() -> (f32, f32) {
-    let (x, y) = mouse_position();
-    (
-        x * UI_WIDTH / screen_width().max(1.0),
-        y * UI_HEIGHT / screen_height().max(1.0),
-    )
+pub fn ui_pointer() -> macroquad_toolkit::ui::Pointer {
+    macroquad_toolkit::ui::Pointer::read(|position| {
+        vec2(
+            position.x * UI_WIDTH / screen_width().max(1.0),
+            position.y * UI_HEIGHT / screen_height().max(1.0),
+        )
+    })
 }
 
 pub fn format_money(value: i64) -> String {
@@ -72,12 +74,8 @@ pub fn format_compact_money(value: i64) -> String {
 
 pub fn button(rect: Rect, label: &str, enabled: bool, tone: ButtonTone) -> bool {
     let enabled = enabled && ui_input_enabled();
-    let (mouse_x, mouse_y) = mouse_position_ui();
-    let hovered = enabled
-        && mouse_x >= rect.x
-        && mouse_x <= rect.x + rect.w
-        && mouse_y >= rect.y
-        && mouse_y <= rect.y + rect.h;
+    let pointer = ui_pointer();
+    let hovered = enabled && (pointer.hovering_over(rect) || pointer.pressing(rect));
 
     let base = match tone {
         ButtonTone::Primary => ACCENT,
@@ -113,7 +111,7 @@ pub fn button(rect: Rect, label: &str, enabled: bool, tone: ButtonTone) -> bool 
     };
     let font_size = if rect.w < 92.0 { 18 } else { 20 };
     draw_centered_text(label, rect, font_size, text_color);
-    enabled && hovered && is_mouse_button_released(MouseButton::Left)
+    enabled && pointer.released_on(rect)
 }
 
 pub fn dark_panel(rect: Rect) {
@@ -192,17 +190,7 @@ pub fn draw_badge(text: &str, rect: Rect, color: Color) {
 }
 
 pub fn rect_clicked(rect: Rect) -> bool {
-    if !ui_input_enabled() {
-        return false;
-    }
-
-    let mouse = macroquad_toolkit::ui::virtual_mouse_position(UI_WIDTH, UI_HEIGHT);
-    let (mouse_x, mouse_y) = (mouse.x, mouse.y);
-    mouse_x >= rect.x
-        && mouse_x <= rect.x + rect.w
-        && mouse_y >= rect.y
-        && mouse_y <= rect.y + rect.h
-        && is_mouse_button_released(MouseButton::Left)
+    ui_input_enabled() && ui_pointer().released_on(rect)
 }
 
 pub fn draw_centered_label(text: &str, rect: Rect, font_size: u16, color: Color) {

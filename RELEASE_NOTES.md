@@ -2,6 +2,18 @@
 
 Auction House Tycoon is a touch-friendly property strategy game for browser and Windows.
 
+## Major auction-room update (19 September 2026)
+
+Rebuilt live bidding around a pixel-art rostrum, auctioneer, competing seats
+and expressive rival portraits. The player's bidding desk now uses a large
+paddle, an assertive jump control and an observation control, with withdrawal
+separate from bids. Research and financial detail sit in an optional catalogue;
+a pressure rail makes researched value and the walk-away threshold spatial.
+
+Authored auctioneer calls, changing lighting, raised paddles and final-call
+gavel poses give the auction visible momentum. Tap rivals to study them, and
+stay in the room for the hammer result before reviewing settlement or negotiation.
+
 ## Included
 
 - A deterministic campaign from market research through live auctions, settlement, leasing, renovation, rent review, refinance, sale, and final ledger.
