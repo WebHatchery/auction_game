@@ -15,16 +15,12 @@ pub(super) fn draw_auction_day_lobby(
     finance_at_cap: FinanceSnapshot,
 ) -> Option<AuctionLobbyAction> {
     soft_panel(rect);
-    draw_rectangle_lines(rect.x, rect.y, rect.w, rect.h, 2.0, ACCENT);
-    draw_badge(
-        "TERMS READ",
-        Rect::new(rect.x + rect.w - 126.0, rect.y + 18.0, 98.0, 28.0),
-        POSITIVE,
-    );
-    draw_badge(
-        &format!("PADDLE {}", auction.player_paddle_number()),
-        Rect::new(rect.x + rect.w - 244.0, rect.y + 18.0, 106.0, 28.0),
-        crate::ui::BLUE,
+    label(
+        &format!("PADDLE {} / REGISTERED", auction.player_paddle_number()),
+        rect.x + rect.w - 255.0,
+        rect.y + 46.0,
+        17,
+        TEXT_DIM,
     );
     label("Auction Day", rect.x + 28.0, rect.y + 48.0, 32, TEXT_BRIGHT);
     draw_wrapped_text(
@@ -46,7 +42,7 @@ pub(super) fn draw_auction_day_lobby(
         ("Bank room at cap", finance_at_cap.headroom_after),
     ];
     let ledger = Rect::new(rect.x + 26.0, rect.y + 178.0, rect.w - 52.0, 224.0);
-    dark_panel(ledger);
+
     label(
         "BIDDER TERMS",
         ledger.x + 18.0,

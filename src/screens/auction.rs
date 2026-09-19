@@ -3,10 +3,7 @@ use crate::model::{Auction, AuctionStatus};
 use crate::screens::auction_debrief::draw_purchase_debrief;
 use crate::screens::auction_lobby::{draw_auction_day_lobby, AuctionLobbyAction};
 use crate::screens::auction_property_panel::draw_auction_property_panel;
-use crate::screens::auction_room_panel::{current_bid_caption, draw_bidder_panel};
-use crate::screens::auction_widgets::{
-    bid_verdict, guidance_color, money_color, temperature_color,
-};
+use crate::screens::auction_stage::draw_live_stage;
 use crate::screens::Screen;
 use crate::sim::auction_events::{
     accept_post_auction_offer, post_auction_offer, test_vendor_at_passed_in_price, vendor_stance,
@@ -17,14 +14,15 @@ use crate::sim::auction_sim::{
     hold_player_position, place_player_bid, place_player_jump_bid, quick_resolve_auction,
     stop_player_bidding,
 };
-use crate::sim::finance::{finance_snapshot, rental_underwrite, FinanceSnapshot};
+use crate::sim::finance::{finance_snapshot, rental_underwrite};
 use crate::sim::research::estimate_reserve;
 use crate::sim::rival_notebook::record_completed_room;
 use crate::sim::valuation::{cash_needed_to_settle, projected_purchase_margin};
 use crate::ui::*;
 use macroquad::prelude::*;
 
-enum AuctionUiAction {
+pub(super) enum AuctionUiAction {
+    ToggleNotes,
     BeginAuction,
     Bid,
     JumpBid,
@@ -47,20 +45,13 @@ impl App {
         let auction = auction.clone();
         let property = auction.property.clone();
         let next_bid = auction.next_bid();
-        let jump_bid = auction.jump_bid();
-        let next_cash_needed = cash_needed_to_settle(next_bid);
-        let next_cash_after = self.player.cash - next_cash_needed;
-        let next_margin = projected_purchase_margin(&property, next_bid, self.market());
         let finance = finance_snapshot(&self.player, self.market(), next_bid);
-        let jump_finance = finance_snapshot(&self.player, self.market(), jump_bid);
-        let jump_margin = projected_purchase_margin(&property, jump_bid, self.market());
         let reserve_estimate = estimate_reserve(
             &property,
             self.market(),
             auction.player_research_level,
             self.player.reputation,
         );
-        let can_afford_next = finance.can_buy;
         let panel_price = if auction.is_running() {
             next_bid
         } else if auction.status == Some(AuctionStatus::PassedIn) {
@@ -75,18 +66,20 @@ impl App {
 
         let panel_h = ui_height() - 142.0;
         let left = Rect::new(28.0, 92.0, 302.0, panel_h);
-        let center = Rect::new(352.0, 92.0, 520.0, panel_h);
-        let right = Rect::new(894.0, 92.0, ui_width() - 922.0, panel_h);
+        let center = Rect::new(352.0, 92.0, ui_width() - 380.0, panel_h);
 
-        draw_auction_property_panel(
-            left,
-            &auction,
-            reserve_estimate,
-            cash_needed_to_settle(panel_price),
-            panel_finance.headroom_after,
-            panel_margin,
-            panel_rental.net_cashflow,
-        );
+        let live = auction.is_running() && auction.has_started;
+        if !live {
+            draw_auction_property_panel(
+                left,
+                &auction,
+                reserve_estimate,
+                cash_needed_to_settle(panel_price),
+                panel_finance.headroom_after,
+                panel_margin,
+                panel_rental.net_cashflow,
+            );
+        }
         if auction.is_running() && !auction.has_started {
             action = draw_auction_day_lobby(
                 center,
@@ -98,24 +91,15 @@ impl App {
                 AuctionLobbyAction::Leave => AuctionUiAction::ReturnToListings,
             });
         } else if auction.is_running() {
-            action = draw_live_decision_panel(
-                center,
-                &auction,
-                next_bid,
-                next_margin,
-                next_cash_after,
-                can_afford_next,
-                finance,
-                jump_bid,
-                jump_margin,
-                jump_finance,
-            );
+            action = draw_live_stage(self, &auction, finance);
         } else if let Some(status) = auction.status.clone() {
             action = self.draw_auction_result(center, &auction, status);
         }
-        draw_bidder_panel(right, &auction, &self.player.rival_notebook);
 
         match action {
+            Some(AuctionUiAction::ToggleNotes) => {
+                self.auction_notes_open = !self.auction_notes_open
+            }
             Some(AuctionUiAction::BeginAuction) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     begin_auction_calls(auction);
@@ -140,6 +124,7 @@ impl App {
             Some(AuctionUiAction::Hold) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     let read = hold_player_position(auction);
+                    self.auction_read = Some((read.clone(), 6.0));
                     self.status = format!("Held position. {read}");
                 }
             }
@@ -397,217 +382,4 @@ impl App {
         }
         None
     }
-}
-
-fn draw_live_decision_panel(
-    rect: Rect,
-    auction: &Auction,
-    next_bid: i64,
-    margin: i64,
-    cash_after: i64,
-    can_afford_next: bool,
-    finance: FinanceSnapshot,
-    jump_bid: i64,
-    jump_margin: i64,
-    jump_finance: FinanceSnapshot,
-) -> Option<AuctionUiAction> {
-    soft_panel(rect);
-    let over_plan = next_bid > auction.player_walkaway_price;
-    let state_color = if over_plan {
-        NEGATIVE
-    } else {
-        temperature_color(auction.temperature)
-    };
-    draw_rectangle_lines(rect.x, rect.y, rect.w, rect.h, 2.0, state_color);
-    label(
-        if over_plan {
-            "Over Plan"
-        } else {
-            auction.temperature.label()
-        },
-        rect.x + 26.0,
-        rect.y + 38.0,
-        22,
-        state_color,
-    );
-    label(
-        auction.temperature.description(),
-        rect.x + 28.0,
-        rect.y + 66.0,
-        14,
-        TEXT_DIM,
-    );
-    label(
-        &format!("{:02}s", auction.seconds_remaining.ceil() as i32),
-        rect.x + rect.w - 104.0,
-        rect.y + 42.0,
-        34,
-        state_color,
-    );
-    draw_centered_label(
-        &current_bid_caption(auction),
-        Rect::new(rect.x + 36.0, rect.y + 86.0, rect.w - 72.0, 28.0),
-        19,
-        TEXT_DIM,
-    );
-    draw_centered_label(
-        &format_money(auction.current_bid),
-        Rect::new(rect.x + 20.0, rect.y + 112.0, rect.w - 40.0, 88.0),
-        74,
-        ACCENT,
-    );
-    let verdict = if finance.can_buy {
-        bid_verdict(
-            margin,
-            cash_after,
-            finance.cash_buffer_target,
-            next_bid,
-            auction.player_walkaway_price,
-        )
-    } else {
-        finance.stress.label()
-    };
-    let verdict_color = if finance.can_buy {
-        guidance_color(
-            margin,
-            cash_after,
-            finance.cash_buffer_target,
-            next_bid,
-            auction.player_walkaway_price,
-        )
-    } else {
-        NEGATIVE
-    };
-    draw_badge(
-        verdict,
-        Rect::new(rect.x + rect.w * 0.5 - 58.0, rect.y + 205.0, 116.0, 28.0),
-        verdict_color,
-    );
-    label("Next Bid", rect.x + 38.0, rect.y + 270.0, 18, TEXT_DIM);
-    label(
-        &format_money(next_bid),
-        rect.x + 38.0,
-        rect.y + 304.0,
-        31,
-        if over_plan { NEGATIVE } else { TEXT_BRIGHT },
-    );
-    label(
-        "Margin after fees",
-        rect.x + 300.0,
-        rect.y + 270.0,
-        18,
-        TEXT_DIM,
-    );
-    label(
-        &format_money(margin),
-        rect.x + 300.0,
-        rect.y + 304.0,
-        31,
-        money_color(margin),
-    );
-
-    if button(
-        Rect::new(rect.x + 38.0, rect.y + 330.0, 208.0, 66.0),
-        &format!("RAISE {}", format_money(next_bid)),
-        auction.is_player_active && can_afford_next,
-        if over_plan || !finance.can_buy {
-            ButtonTone::Danger
-        } else {
-            ButtonTone::Primary
-        },
-    ) {
-        return Some(AuctionUiAction::Bid);
-    }
-    let jump_over_plan = jump_bid > auction.player_walkaway_price;
-    let jump_label = if auction.jump_bid_available {
-        format!("ASSERT {}", format_money(jump_bid))
-    } else {
-        "ASSERT USED".to_string()
-    };
-    if button(
-        Rect::new(rect.x + rect.w - 246.0, rect.y + 330.0, 208.0, 66.0),
-        &jump_label,
-        auction.is_player_active && auction.jump_bid_available && jump_finance.can_buy,
-        if jump_over_plan {
-            ButtonTone::Danger
-        } else {
-            ButtonTone::Secondary
-        },
-    ) {
-        return Some(AuctionUiAction::JumpBid);
-    }
-    label(
-        "Raise one step; reveal little.",
-        rect.x + 45.0,
-        rect.y + 418.0,
-        15,
-        guidance_color(
-            margin,
-            cash_after,
-            finance.cash_buffer_target,
-            next_bid,
-            auction.player_walkaway_price,
-        ),
-    );
-    let jump_note = if auction.jump_bid_available {
-        format!("Jump two steps; margin {}.", format_money(jump_margin))
-    } else {
-        "One assertive jump per auction.".to_string()
-    };
-    label_fit(
-        &jump_note,
-        rect.x + rect.w - 238.0,
-        rect.y + 418.0,
-        200.0,
-        15,
-        if jump_over_plan { NEGATIVE } else { WARNING },
-    );
-    draw_wrapped_text(
-        auction
-            .last_room_read
-            .as_deref()
-            .unwrap_or("Tap WAIT & READ ROOM to observe a current tell."),
-        rect.x + 54.0,
-        rect.y + 444.0,
-        rect.w - 108.0,
-        14,
-        TEXT_DIM,
-    );
-
-    if !auction.is_player_active {
-        label(
-            "You are out. Let the room finish without waiting.",
-            rect.x + 54.0,
-            rect.y + 474.0,
-            17,
-            TEXT_DIM,
-        );
-        if button(
-            Rect::new(rect.x + 38.0, rect.y + 498.0, rect.w - 76.0, 48.0),
-            "Quick Resolve",
-            true,
-            ButtonTone::Primary,
-        ) {
-            return Some(AuctionUiAction::QuickResolve);
-        }
-        return None;
-    }
-
-    if button(
-        Rect::new(rect.x + 38.0, rect.y + 468.0, 205.0, 48.0),
-        "Wait & Read Room",
-        auction.is_player_active,
-        ButtonTone::Secondary,
-    ) {
-        return Some(AuctionUiAction::Hold);
-    }
-    if button(
-        Rect::new(rect.x + rect.w - 243.0, rect.y + 468.0, 205.0, 48.0),
-        "Walk Away",
-        auction.is_player_active,
-        ButtonTone::Ghost,
-    ) {
-        return Some(AuctionUiAction::WalkAway);
-    }
-    None
 }

@@ -4,6 +4,25 @@ Auction House Tycoon is a property strategy game about doing the work before Sat
 
 Winning an auction is not automatically good. The real challenge is knowing what a property is worth, when to stop bidding, and whether a renovation will improve the deal or just make a loss prettier.
 
+## Auction-first flow
+
+Scout -> Research -> Register -> Auction -> Outcome -> Recover. Scout is the
+main way into bidding; Recover and Portfolio support the next Saturday.
+
+The live room gives the bid and current call the main stage. Rival counters and
+exits appear briefly, with names, archetypes, states and short tells alongside.
+Financial guardrails show your limit, cash and bank room after the next bid,
+and expected margin. PROPERTY NOTES opens the researched reserve and rental
+forecast without stopping the room.
+
+RAISE is a single step; ASSERT is a once-per-room double step that can provoke
+emotional rivals. WAIT & READ ROOM invites a response and keeps the last
+observation readable for six seconds. WALK AWAY becomes prominent at your
+limit. While leading, watch the room rather than bidding against yourself.
+Calls progress from steady interest through slowing, final calls, going once
+and going twice; only the last six seconds show a clock. A late bid may reopen
+the calls using the existing overtime rules.
+
 ## Gameplay
 
 - Study a rotating Saturday schedule and spend up to two auction registrations each week.
@@ -15,7 +34,7 @@ Winning an auction is not automatically good. The real challenge is knowing what
 - Watch different emotional rivals break their own limits for different reasons while investors, developers, and bargain hunters keep their ceilings.
 - Resume a saved live auction without rerolling the room, and survive a suspended browser tab without losing the clock.
 - Load older saves safely: rebuilt hammer ledgers, live-room state, leasing campaigns, and rent-review schedules all have migration defaults.
-- Tap WAIT & READ ROOM to earn a current observation; the next bid makes that read stale.
+- Tap WAIT & READ ROOM to earn an observation; it remains visible briefly as a past read after the next bid.
 - Meet the same named rivals across Saturdays and build a notebook of their appearances, wins, stretching behaviour, and highest rooms.
 - Hear a legal vendor bid below the hidden reserve and the auctioneer's decisive on-market call.
 - Open in $10,000 rises, then bid in tighter $5,000 steps after the on-market call.
@@ -32,7 +51,7 @@ Winning an auction is not automatically good. The real challenge is knowing what
 - Track every property, cash, debt, rent, weekly cashflow, fees, repairs, and net worth.
 - Read each home's equity, loan-to-value ratio, and market-adjusted annual loan rate before deciding whether to hold, pay down, refinance, or sell.
 - Underwrite the rent at your chosen walk-away price, including management, property outgoings, and loan interest, before registering to bid.
-- Keep that rental cashflow forecast visible beside margin and finance headroom while the auction is live.
+- Open PROPERTY NOTES for the rental cashflow forecast while bidding; keep the main stage focused on price and your limit.
 - Carry a visible registered paddle from the bidder-terms lobby into the room, where the current leading bidder is always named.
 - Translate a hammer win into a settlement ledger showing the 10% deposit, new loan, rent appraisal, and leveraged weekly cashflow before purchase settlement.
 - Diagnose every owned home's true weekly result after its rent, management, loan interest, property costs, and maintenance impact.

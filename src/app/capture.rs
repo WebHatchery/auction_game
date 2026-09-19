@@ -45,6 +45,8 @@ impl App {
             "listings" => {
                 self.start_new_game();
                 self.screen = Screen::PropertyList;
+                self.status =
+                    "Tap INSPECT to research a listing before spending a registration.".to_string();
             }
             "detail" => {
                 self.start_new_game();
@@ -60,12 +62,18 @@ impl App {
             "detail_compact" => self.seed_property_detail_capture(6),
             "detail_premium" => self.seed_property_detail_capture(4),
             "detail_large_block" => self.seed_property_detail_capture(11),
-            "auction" => {
+            "auction" | "auction_notes" | "auction_limit" => {
                 self.start_new_game();
                 if let Some(property) = self.available_properties.first().cloned() {
                     self.start_auction(property.id);
                     if let Some(auction) = self.current_auction.as_mut() {
                         begin_auction_calls(auction);
+                    }
+                    self.auction_notes_open = scene == "auction_notes";
+                    if let Some(auction) = self.current_auction.as_mut() {
+                        if scene == "auction_limit" {
+                            auction.current_bid = auction.player_walkaway_price;
+                        }
                     }
                     self.status =
                         "Bidding is live. Read the room and protect the walk-away.".to_string();

@@ -15,10 +15,10 @@ const FILTERS: [&str; 5] = [
 
 impl App {
     pub(crate) fn draw_property_list(&mut self) {
-        label("Auction Listings", 28.0, 106.0, 30, TEXT_BRIGHT);
+        label("Scout the next auction", 28.0, 106.0, 30, TEXT_BRIGHT);
         label(
             &format!(
-                "Saturday schedule: {} registration{} left. Research before you spend one.",
+                "{} registration{} left this week. Research costs cash. Inspect before you commit.",
                 self.auction_registrations,
                 if self.auction_registrations == 1 {
                     ""
@@ -68,49 +68,28 @@ impl App {
             let x = 28.0 + col as f32 * (card_w + 15.0);
             let y = 214.0 + row as f32 * (card_h + 16.0);
             let rect = Rect::new(x, y, card_w, card_h);
-            soft_panel(rect);
-            draw_house_art(Rect::new(x + 12.0, y + 12.0, card_w - 24.0, 82.0), property);
-
+            draw_house_art(Rect::new(x, y, 112.0, 82.0), property);
             label_fit(
                 &property.address,
-                x + 14.0,
-                y + 112.0,
-                card_w - 144.0,
-                21,
+                x + 130.0,
+                y + 25.0,
+                card_w - 130.0,
+                22,
                 TEXT_BRIGHT,
             );
             label(
-                reason_to_care(property, self),
-                x + 14.0,
-                y + 136.0,
-                16,
-                verdict_color(property, self),
-            );
-            label(
                 &format!("Guide {}", format_money(property.guide_price)),
-                x + 14.0,
-                y + 162.0,
-                19,
-                POSITIVE,
+                x + 130.0,
+                y + 57.0,
+                22,
+                TEXT_BRIGHT,
             );
-            draw_badge(
-                upside_badge(property, self),
-                Rect::new(x + 14.0, y + 176.0, 108.0, 24.0),
-                POSITIVE,
-            );
-            draw_badge(
-                risk_badge(property),
-                Rect::new(x + 132.0, y + 176.0, 96.0, 24.0),
-                risk_color(property),
-            );
-            draw_badge(
-                &yield_badge(property, self),
-                Rect::new(x + 238.0, y + 176.0, 104.0, 24.0),
-                crate::ui::BLUE,
-            );
+            label(upside_badge(property, self), x, y + 112.0, 17, POSITIVE);
+            label(risk_badge(property), x, y + 140.0, 16, risk_color(property));
+            label(&yield_badge(property, self), x, y + 171.0, 17, TEXT_DIM);
 
             let inspect_pressed = if button(
-                Rect::new(x + card_w - 116.0, y + 130.0, 98.0, 34.0),
+                Rect::new(x + card_w - 116.0, y + 140.0, 108.0, 44.0),
                 "Inspect",
                 true,
                 ButtonTone::Primary,
@@ -209,19 +188,4 @@ fn gross_yield(property: &Property, app: &App) -> f32 {
 
 fn yield_badge(property: &Property, app: &App) -> String {
     format!("{:.1}% YIELD", gross_yield(property, app) * 100.0)
-}
-
-fn reason_to_care(property: &Property, app: &App) -> &'static str {
-    let _ = app;
-    property.deal_archetype.label()
-}
-
-fn verdict_color(property: &Property, app: &App) -> Color {
-    if property.hidden_defect_risk >= 0.28 {
-        WARNING
-    } else if upside_amount(property, app) >= 95_000 || property.buyer_demand >= 70 {
-        POSITIVE
-    } else {
-        TEXT_DIM
-    }
 }

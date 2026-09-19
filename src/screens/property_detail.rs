@@ -21,7 +21,13 @@ impl App {
         let research_level = self.research_level(property.id);
         let mut research_action = None;
 
-        label("Property Decision", 28.0, 106.0, 18, crate::ui::BLUE);
+        label(
+            "Research / set your limit / register",
+            28.0,
+            106.0,
+            18,
+            crate::ui::BLUE,
+        );
         label(&property.address, 28.0, 136.0, 32, TEXT_BRIGHT);
         label(
             &format!(
@@ -417,7 +423,7 @@ fn draw_walkaway_panel(app: &mut App, rect: Rect, property: &Property) {
         if can_register {
             "REGISTER TO BID"
         } else {
-            "VIEW DASHBOARD"
+            "RECOVER"
         },
         true,
         if can_register {

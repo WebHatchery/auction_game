@@ -54,34 +54,29 @@ impl App {
         let card_w = (width - gap * 3.0) / 4.0;
         let cards = [
             (
-                "1  RESEARCH",
+                "1  SCOUT & RESEARCH",
                 "Compare the guide, likely value, defects, rent, and your cash after settlement.",
                 crate::ui::BLUE,
             ),
             (
-                "2  SET YOUR LIMIT",
+                "2  REGISTER",
                 "Choose a walk-away price, register, review the binding terms, then tap START AUCTION CALLS.",
                 POSITIVE,
             ),
             (
-                "3  READ THE ROOM",
+                "3  AUCTION",
                 "Raise, assert once, wait for a tell, or walk away. Winning can still be a mistake.",
                 WARNING,
             ),
             (
-                "4  MAKE IT WORK",
+                "4  OUTCOME & RECOVER",
                 "Tap ADVERTISE FOR RENT, survive the vacant week, then choose RENEW or ASK at rent reviews.",
                 ACCENT,
             ),
         ];
         for (index, (title, copy, color)) in cards.iter().enumerate() {
             let rect = Rect::new(x + index as f32 * (card_w + gap), cards_y, card_w, 170.0);
-            soft_panel(rect);
-            draw_badge(
-                title,
-                Rect::new(rect.x + 14.0, rect.y + 15.0, rect.w - 28.0, 28.0),
-                *color,
-            );
+            label(title, rect.x + 16.0, rect.y + 33.0, 17, *color);
             draw_wrapped_text(copy, rect.x + 16.0, rect.y + 66.0, rect.w - 32.0, 17, TEXT);
         }
 

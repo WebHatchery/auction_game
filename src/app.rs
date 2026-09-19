@@ -28,6 +28,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 mod capture;
+mod navigation;
 mod portfolio_actions;
 mod purchase_actions;
 
@@ -69,6 +70,9 @@ pub struct App {
     pub(crate) week: u32,
     pub(crate) market_index: usize,
     pub(crate) screen: Screen,
+    pub(crate) auction_notes_open: bool,
+    pub(crate) auction_read: Option<(String, f32)>,
+    pub(crate) auction_beat: Option<(String, f32)>,
     pub(crate) current_auction: Option<crate::model::Auction>,
     pub(crate) purchase_debrief: Option<PurchaseDebrief>,
     pub(crate) sale_result: Option<SaleResult>,
@@ -108,6 +112,9 @@ impl App {
             week: 1,
             market_index: 0,
             screen: Screen::Title,
+            auction_notes_open: false,
+            auction_read: None,
+            auction_beat: None,
             current_auction: None,
             purchase_debrief: None,
             sale_result: None,
@@ -144,7 +151,37 @@ impl App {
                 .as_ref()
                 .and_then(|auction| auction.status.clone());
             if let Some(auction) = self.current_auction.as_mut() {
+                if let Some((_, remaining)) = self.auction_read.as_mut() {
+                    *remaining = (*remaining - dt).max(0.0);
+                }
+                let previous_bid = auction.current_bid;
+                let active: Vec<bool> =
+                    auction.bidders.iter().map(|bidder| bidder.active).collect();
+                if let Some((_, remaining)) = self.auction_beat.as_mut() {
+                    *remaining = (*remaining - dt).max(0.0);
+                }
                 update_auction(auction, dt);
+                let departed = auction
+                    .bidders
+                    .iter()
+                    .zip(active)
+                    .find(|(bidder, was_active)| *was_active && !bidder.active);
+                if let Some((bidder, _)) = departed {
+                    self.auction_beat =
+                        Some((format!("{} lowers their paddle. Out.", bidder.name), 4.0));
+                }
+                if auction.current_bid != previous_bid {
+                    if let Some(crate::model::BidderActor::Npc(index)) = auction.last_bidder {
+                        self.auction_beat = Some((
+                            format!(
+                                "{} counters at {}.",
+                                auction.bidders[index].name,
+                                format_money(auction.current_bid)
+                            ),
+                            4.0,
+                        ));
+                    }
+                }
             }
             let completed_status = self
                 .current_auction
@@ -196,7 +233,9 @@ impl App {
             Screen::SaleResult => self.draw_sale_result(),
         }
 
-        self.draw_status_bar();
+        if self.screen != Screen::Auction {
+            self.draw_status_bar();
+        }
         set_ui_input_enabled(true);
 
         if self.esc_menu_open {
@@ -220,7 +259,7 @@ impl App {
                 .record_unused_registrations(self.auction_registrations);
             self.auction_registrations = 0;
             self.status = format!(
-                "Portfolio established in week {} with {} net worth. Tap DASHBOARD for the final ledger.",
+                "Portfolio established in week {} with {} net worth. Tap RECOVER for the final ledger.",
                 self.week,
                 format_money(net_worth(&self.player, self.market()))
             );
@@ -235,72 +274,6 @@ impl App {
             .get(&property_id)
             .map(|report| report.level)
             .unwrap_or(ResearchLevel::StreetScan)
-    }
-
-    fn draw_header(&mut self) {
-        draw_rectangle(0.0, 0.0, ui_width(), 68.0, PANEL_DARK);
-        if button(
-            Rect::new(16.0, 12.0, 72.0, 44.0),
-            "Menu",
-            true,
-            ButtonTone::Ghost,
-        ) {
-            self.esc_menu_open = !self.esc_menu_open;
-            self.esc_settings_open = false;
-        }
-        label("Auction House Tycoon", 94.0, 42.0, 30, TEXT_BRIGHT);
-        label(&format!("Week {}", self.week), 430.0, 41.0, 19, TEXT_DIM);
-        label(
-            &format!("Registrations {}/2", self.auction_registrations),
-            520.0,
-            41.0,
-            16,
-            if self.auction_registrations > 0 {
-                POSITIVE
-            } else {
-                WARNING
-            },
-        );
-
-        let mut x = ui_width() - 422.0;
-        let nav_enabled = self
-            .current_auction
-            .as_ref()
-            .map(|auction| !auction.is_running())
-            .unwrap_or(true);
-
-        if button(
-            Rect::new(x, 12.0, 130.0, 44.0),
-            "Dashboard",
-            nav_enabled,
-            ButtonTone::Ghost,
-        ) {
-            self.screen = Screen::Dashboard;
-        }
-        x += 142.0;
-        if button(
-            Rect::new(x, 12.0, 120.0, 44.0),
-            "Listings",
-            nav_enabled,
-            ButtonTone::Ghost,
-        ) {
-            self.screen = Screen::PropertyList;
-        }
-        x += 132.0;
-        if button(
-            Rect::new(x, 12.0, 120.0, 44.0),
-            "Portfolio",
-            nav_enabled,
-            ButtonTone::Ghost,
-        ) {
-            self.screen = Screen::Portfolio;
-        }
-    }
-
-    fn draw_status_bar(&self) {
-        let rect = Rect::new(0.0, ui_height() - 40.0, ui_width(), 40.0);
-        draw_rectangle(rect.x, rect.y, rect.w, rect.h, PANEL_DARK);
-        label(&self.status, 28.0, ui_height() - 15.0, 17, TEXT_DIM);
     }
 
     pub(crate) fn open_property_detail(&mut self, index: usize) {
@@ -462,8 +435,8 @@ impl App {
 
     pub(crate) fn start_auction(&mut self, property_id: PropertyId) {
         if self.auction_registrations == 0 {
-            self.status = "This week's registrations are used. Tap ADVANCE WEEK on the Dashboard."
-                .to_string();
+            self.status =
+                "This week's registrations are used. Tap ADVANCE WEEK on RECOVER.".to_string();
             return;
         }
         let Some(property) = self
@@ -474,6 +447,9 @@ impl App {
         else {
             return;
         };
+        self.auction_notes_open = false;
+        self.auction_beat = None;
+        self.auction_read = None;
         self.current_auction = Some(create_auction(
             &property,
             self.market(),

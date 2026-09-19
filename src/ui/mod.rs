@@ -99,10 +99,18 @@ pub fn button(rect: Rect, label: &str, enabled: bool, tone: ButtonTone) -> bool 
         );
     }
 
-    let surface = macroquad_toolkit::ui::SurfaceStyle::new(color).with_border(1.5, PANEL_EDGE);
-    macroquad_toolkit::ui::draw_surface(rect, &surface);
+    let surface = macroquad_toolkit::ui::SurfaceStyle::new(color);
+    if !matches!(tone, ButtonTone::Ghost) || hovered {
+        macroquad_toolkit::ui::draw_surface(rect, &surface);
+    }
 
-    let text_color = if enabled { TEXT_BRIGHT } else { TEXT_DIM };
+    let text_color = if !enabled {
+        TEXT_DIM
+    } else if matches!(tone, ButtonTone::Primary) {
+        BACKGROUND
+    } else {
+        TEXT_BRIGHT
+    };
     let font_size = if rect.w < 92.0 { 18 } else { 20 };
     draw_centered_text(label, rect, font_size, text_color);
     enabled && hovered && is_mouse_button_released(MouseButton::Left)
@@ -114,10 +122,7 @@ pub fn dark_panel(rect: Rect) {
 }
 
 pub fn soft_panel(rect: Rect) {
-    let surface = macroquad_toolkit::ui::SurfaceStyle::new(PANEL_SOFT).with_border(
-        1.0,
-        Color::new(PANEL_EDGE.r, PANEL_EDGE.g, PANEL_EDGE.b, 0.58),
-    );
+    let surface = macroquad_toolkit::ui::SurfaceStyle::new(PANEL_SOFT);
     macroquad_toolkit::ui::draw_surface(rect, &surface);
 }
 
