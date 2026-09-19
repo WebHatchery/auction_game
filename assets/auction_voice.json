@@ -1,11 +1,57 @@
 {
-  "phases": ["THE ROOM IS OPEN", "PADDLES UP", "THE ROOM IS SLOWING", "FINAL CALLS", "GOING ONCE", "GOING TWICE"],
+  "phases": [
+    "THE ROOM IS OPEN",
+    "PADDLES UP",
+    "THE ROOM IS SLOWING",
+    "FINAL CALLS",
+    "GOING ONCE",
+    "GOING TWICE"
+  ],
   "calls": [
-    ["Opening at {bid}. Looking for {next}.", "An opening bid. Who starts us?"],
-    ["I have {bid}. Looking for {next}.", "At {bid}. Can I see {next}?", "The bid is {bid}. Who's next?"],
-    ["All done? All finished?", "Take your time. But not too much."],
-    ["Any advance on {bid}?", "Last opportunity. Are we all done?"],
-    ["Going once... any further interest?"],
-    ["Going twice. Last chance."]
-  ]
+    [
+      "Opening at {bid}. Looking for {next}.",
+      "An opening bid. Who starts us?"
+    ],
+    [
+      "I have {bid}. Looking for {next}.",
+      "At {bid}. Can I see {next}?",
+      "The bid is {bid}. Who's next?"
+    ],
+    [
+      "All done? All finished?",
+      "Take your time. But not too much."
+    ],
+    [
+      "Any advance on {bid}?",
+      "Last opportunity. Are we all done?"
+    ],
+    [
+      "Going once... any further interest?"
+    ],
+    [
+      "Going twice. Last chance."
+    ]
+  ],
+  "reactions": {
+    "watching": "watching",
+    "calculating": "calculating",
+    "hesitant": "hesitant",
+    "frustrated": "frustrated",
+    "aggressive": "aggressive",
+    "preparing": "preparing to bid",
+    "near_limit": "near limit",
+    "withdrawn": "withdrawn",
+    "withdrew": "{name} lowers their paddle.",
+    "bid": "{name} raises their paddle.",
+    "quick_bid": "{name} answers without wavering.",
+    "hesitated": "{name} hesitates.",
+    "prepared": "{name} reaches for their paddle.",
+    "price_call": "{bid}. Looking for {next}.",
+    "advance": "At {bid}. Any advance?",
+    "selling": "I'm selling...",
+    "once": "Going once.",
+    "twice": "Going twice.",
+    "opening": "Who starts us at {next}?",
+    "vendor": "Vendor bid at {bid}."
+  }
 }

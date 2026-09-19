@@ -1,5 +1,6 @@
 use crate::model::{Auction, BidderActor};
 use crate::screens::auction_widgets::mood_color;
+use crate::ui::auction_reactions::Reaction;
 use crate::ui::*;
 use macroquad::prelude::*;
 
@@ -45,11 +46,9 @@ pub(super) fn draw_bidder_panel(
             20,
             if bidder.active { TEXT_BRIGHT } else { TEXT_DIM },
         );
-        crate::screens::auction_scene::actor(
+        crate::screens::auction_scene::reacting_actor(
             Rect::new(rect.x, y + 15.0, 62.0, 73.0),
-            bidder.bidder_type,
-            bidder.mood,
-            leading,
+            bidder,
         );
         label(
             bidder.bidder_type.label(),
@@ -59,14 +58,11 @@ pub(super) fn draw_bidder_panel(
             TEXT_DIM,
         );
         draw_circle(rect.x + 83.0, y + 64.0, 3.0, color);
-        label(
-            if leading {
-                "LEADING"
-            } else {
-                bidder.mood.label()
-            },
+        label_fit(
+            Reaction::for_bidder(bidder, auction.next_bid(), auction.bid_increment).label(),
             rect.x + 94.0,
             y + 70.0,
+            rect.w - 94.0,
             17,
             color,
         );

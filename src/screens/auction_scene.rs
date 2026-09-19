@@ -79,29 +79,85 @@ pub(super) fn actor(rect: Rect, kind: BidderType, mood: BidderMood, raised: bool
     }
 }
 
+pub(super) fn reacting_actor(mut rect: Rect, bidder: &crate::model::Bidder) {
+    let raised = bidder.active && bidder.bid_flash > 0.25;
+    if !bidder.active {
+        rect.y += 5.0;
+    } else if bidder.preparing_bid {
+        rect.y -= 2.0;
+        rect.x += if bidder.reaction_timer > 0.3 {
+            -2.0
+        } else {
+            2.0
+        };
+    } else if bidder.mood == BidderMood::Hesitating {
+        rect.x += (bidder.reaction_timer * 5.0).sin() * 1.5;
+    }
+    if bidder.bid_flash > 0.0 {
+        let mut glow = ACCENT;
+        glow.a = (bidder.bid_flash / 1.1).clamp(0.0, 1.0) * 0.75;
+        draw_rectangle_lines(
+            rect.x - 5.0,
+            rect.y - 5.0,
+            rect.w + 10.0,
+            rect.h + 12.0,
+            2.0,
+            glow,
+        );
+    }
+    actor(rect, bidder.bidder_type, bidder.mood, raised);
+    if !raised {
+        let paddle = if bidder.active { TEXT_DIM } else { PANEL_EDGE };
+        let y = rect.y + rect.h * 0.82;
+        draw_line(
+            rect.x + rect.w * 0.83,
+            y,
+            rect.x + rect.w * 1.05,
+            y + 9.0,
+            2.0,
+            paddle,
+        );
+        draw_rectangle(rect.x + rect.w * 0.94, y + 4.0, rect.w * 0.17, 5.0, paddle);
+    }
+}
+
 pub(super) fn room(auction: &crate::model::Auction, urgent: bool) {
     let wall = Color::from_rgba(30, 38, 40, 255);
     let wood = Color::from_rgba(72, 59, 49, 255);
-    draw_rectangle(224.0, 70.0, 694.0, 384.0, wall);
+    draw_rectangle(184.0, 46.0, 734.0, 408.0, wall);
     // Light narrows towards the rostrum as the room runs out of time.
     let spread = if urgent { 180.0 } else { 310.0 };
     draw_triangle(
-        vec2(571.0, 71.0),
+        vec2(571.0, 47.0),
         vec2(571.0 - spread, 348.0),
         vec2(571.0 + spread, 348.0),
         Color::from_rgba(49, 49, 41, 255),
     );
-    for x in [236.0, 896.0] {
-        draw_rectangle(x, 70.0, 9.0, 295.0, wood);
-        draw_rectangle(x - 5.0, 70.0, 19.0, 6.0, ACCENT);
+    for x in [196.0, 896.0] {
+        draw_rectangle(x, 46.0, 9.0, 319.0, wood);
+        draw_rectangle(x - 5.0, 46.0, 19.0, 6.0, ACCENT);
     }
-    draw_rectangle(251.0, 82.0, 640.0, 5.0, wood);
+    draw_rectangle(211.0, 58.0, 680.0, 5.0, wood);
     actor(
         Rect::new(539.0, 92.0, 56.0, 65.0),
         BidderType::Investor,
         BidderMood::Interested,
         false,
     );
+    if auction.last_bidder.is_some() && auction.seconds_since_bid < 0.7 {
+        let direction = match auction.last_bidder {
+            Some(crate::model::BidderActor::Npc(0)) => -1.0,
+            _ => 1.0,
+        };
+        draw_line(565.0, 143.0, 565.0 + direction * 29.0, 134.0, 7.0, TEXT_DIM);
+        draw_rectangle(
+            562.0 + direction * 31.0,
+            130.0,
+            7.0,
+            6.0,
+            Color::from_rgba(204, 153, 112, 255),
+        );
+    }
     draw_rectangle(529.0, 152.0, 91.0, 12.0, wood);
     draw_rectangle(538.0, 164.0, 73.0, 18.0, Color::from_rgba(51, 43, 37, 255));
     draw_rectangle(556.0, 168.0, 36.0, 3.0, ACCENT);
@@ -116,12 +172,7 @@ pub(super) fn room(auction: &crate::model::Auction, urgent: bool) {
         let x = [252.0, 834.0, 770.0][index % 3];
         let y = if index == 2 { 116.0 } else { 151.0 };
         let leading = auction.last_bidder == Some(crate::model::BidderActor::Npc(index));
-        actor(
-            Rect::new(x, y, 45.0, 52.0),
-            bidder.bidder_type,
-            bidder.mood,
-            leading,
-        );
+        reacting_actor(Rect::new(x, y, 45.0, 52.0), bidder);
         draw_rectangle(
             x - 2.0,
             y + 45.0,
@@ -133,6 +184,6 @@ pub(super) fn room(auction: &crate::model::Auction, urgent: bool) {
             draw_rectangle(x, y + 65.0, 44.0, 3.0, ACCENT);
         }
     }
-    draw_rectangle(224.0, 440.0, 694.0, 14.0, wood);
-    draw_line(224.0, 440.0, 918.0, 440.0, 2.0, PANEL_EDGE);
+    draw_rectangle(184.0, 440.0, 734.0, 14.0, wood);
+    draw_line(184.0, 440.0, 918.0, 440.0, 2.0, PANEL_EDGE);
 }

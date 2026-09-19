@@ -2,104 +2,40 @@
 use crate::app::App;
 use crate::model::Auction;
 use crate::screens::auction::AuctionUiAction;
-use crate::sim::finance::{max_financeable_bid, rental_underwrite, FinanceSnapshot};
 use crate::sim::research::researched_value_range;
 use crate::sim::valuation::projected_purchase_margin;
 use crate::ui::auction_view::BidPressure;
 use crate::ui::*;
 use macroquad::prelude::*;
 
-pub(super) fn draw_context(
-    app: &App,
-    auction: &Auction,
-    finance: FinanceSnapshot,
-) -> Option<AuctionUiAction> {
+pub(super) fn draw_context(app: &App, auction: &Auction) -> Option<AuctionUiAction> {
     if let Some(index) = app
         .auction_focus
         .filter(|index| *index < auction.bidders.len())
     {
         return draw_rival_notes(auction, index);
     }
-    draw_house_art(Rect::new(24.0, 148.0, 174.0, 124.0), &auction.property);
+    draw_house_art(Rect::new(20.0, 104.0, 142.0, 104.0), &auction.property);
     draw_wrapped_text(
         &auction.property.address,
-        24.0,
-        304.0,
-        176.0,
-        24,
+        20.0,
+        240.0,
+        146.0,
+        20,
         TEXT_BRIGHT,
     );
-    if app.auction_notes_open {
-        draw_notes(app, auction, finance);
-    } else {
-        let headroom =
-            (max_financeable_bid(&app.player, app.market()) - auction.current_bid).max(0);
-        label("Available to bid", 24.0, 414.0, 14, TEXT_DIM);
-        label(
-            &format_money(headroom),
-            24.0,
-            445.0,
-            26,
-            if finance.can_buy { TEXT } else { WARNING },
-        );
-        let margin =
-            projected_purchase_margin(&auction.property, auction.current_bid, app.market());
+    if auction.is_running() && auction.next_bid() >= auction.player_walkaway_price {
+        let margin = projected_purchase_margin(&auction.property, auction.next_bid(), app.market());
         draw_wrapped_text(
             &format!("Est. margin {}", format_money(margin)),
-            24.0,
-            484.0,
-            177.0,
+            20.0,
+            340.0,
+            146.0,
             17,
-            if margin < 0 { WARNING } else { TEXT_DIM },
+            WARNING,
         );
     }
-    if button(
-        Rect::new(16.0, 557.0, 190.0, 44.0),
-        if app.auction_notes_open {
-            "Close notes"
-        } else {
-            "Notes"
-        },
-        true,
-        ButtonTone::Ghost,
-    ) {
-        return Some(AuctionUiAction::ToggleNotes);
-    }
-    if !auction.is_running() {
-        return None;
-    }
-    let near_limit = auction.next_bid() >= auction.player_walkaway_price;
-    if auction.is_running()
-        && button(
-            Rect::new(92.0, 12.0, 128.0, 44.0),
-            "Leave",
-            auction.is_player_active,
-            if near_limit {
-                ButtonTone::Danger
-            } else {
-                ButtonTone::Ghost
-            },
-        )
-    {
-        return Some(AuctionUiAction::WalkAway);
-    }
     None
-}
-
-fn draw_notes(app: &App, auction: &Auction, finance: FinanceSnapshot) {
-    let rental = rental_underwrite(&auction.property, app.market(), auction.next_bid());
-    for (index, (title, amount)) in [
-        ("Cash after next bid", finance.cash_after_settle),
-        ("Bank room after bid", finance.headroom_after),
-        ("Rental cashflow / wk", rental.net_cashflow),
-    ]
-    .iter()
-    .enumerate()
-    {
-        let y = 400.0 + index as f32 * 48.0;
-        label(title, 24.0, y, 14, TEXT_DIM);
-        label(&format_money(*amount), 24.0, y + 25.0, 20, TEXT);
-    }
 }
 
 pub(super) fn draw_pressure(app: &App, auction: &Auction) {
@@ -116,104 +52,43 @@ pub(super) fn draw_pressure(app: &App, auction: &Auction) {
         auction.player_walkaway_price,
         auction.current_bid,
     );
-    let x = |price| 252.0 + scale.position(price) * 638.0;
+    let x = |price| 214.0 + scale.position(price) * 676.0;
     let limit_x = x(auction.player_walkaway_price);
     let bid_x = x(auction.current_bid);
     let over = auction.current_bid >= auction.player_walkaway_price;
-    draw_rectangle(252.0, 479.0, 638.0, 4.0, PANEL_EDGE);
-    draw_rectangle(
-        limit_x,
-        478.0,
-        890.0 - limit_x,
-        6.0,
-        Color::from_rgba(87, 49, 40, 255),
-    );
-    draw_rectangle(
-        x(low),
-        475.0,
-        (x(high) - x(low)).max(2.0),
-        12.0,
-        Color::from_rgba(56, 81, 73, 255),
-    );
-    draw_rectangle(
-        252.0,
-        479.0,
-        bid_x - 252.0,
-        4.0,
-        if over { NEGATIVE } else { ACCENT },
-    );
-    draw_line(limit_x, 469.0, limit_x, 490.0, 2.0, WARNING);
-    draw_triangle(
-        vec2(bid_x, 482.0),
-        vec2(bid_x - 5.0, 490.0),
-        vec2(bid_x + 5.0, 490.0),
-        TEXT_BRIGHT,
-    );
+    draw_line(214.0, 482.0, 890.0, 482.0, 2.0, PANEL_EDGE);
+    draw_circle(bid_x, 482.0, 5.0, if over { NEGATIVE } else { ACCENT });
+    draw_line(x(estimate), 477.0, x(estimate), 487.0, 2.0, TEXT_DIM);
+    draw_line(limit_x, 475.0, limit_x, 489.0, 2.0, WARNING);
     label(
-        &format!("Limit {}", format_money(auction.player_walkaway_price)),
-        (limit_x - 120.0).clamp(252.0, 660.0),
-        468.0,
-        14,
-        if over { NEGATIVE } else { WARNING },
-    );
-    label(
-        &format!("Est. value {}", format_money(estimate)),
-        252.0,
-        511.0,
+        &format!("Est. {}", format_money(estimate)),
+        (x(estimate) - 60.0).clamp(214.0, 752.0),
+        508.0,
         14,
         TEXT_DIM,
     );
     label(
-        if over {
-            if auction.current_bid > auction.player_walkaway_price {
-                "PAST YOUR LIMIT"
-            } else {
-                "AT YOUR LIMIT"
-            }
-        } else if auction.next_bid() >= auction.player_walkaway_price {
-            "LAST STEP TO YOUR LIMIT"
-        } else {
-            ""
-        },
-        657.0,
-        511.0,
+        &format!("Limit {}", format_money(auction.player_walkaway_price)),
+        (limit_x - 70.0).clamp(214.0, 740.0),
+        468.0,
         14,
-        if over { NEGATIVE } else { TEXT_DIM },
+        if over { NEGATIVE } else { WARNING },
     );
 }
 
 fn draw_rival_notes(auction: &Auction, index: usize) -> Option<AuctionUiAction> {
     let bidder = &auction.bidders[index];
-    crate::screens::auction_scene::actor(
-        Rect::new(54.0, 130.0, 104.0, 122.0),
-        bidder.bidder_type,
-        bidder.mood,
-        auction.last_bidder == Some(crate::model::BidderActor::Npc(index)),
-    );
-    draw_wrapped_text(&bidder.name, 24.0, 292.0, 178.0, 24, TEXT_BRIGHT);
-    label(bidder.bidder_type.label(), 24.0, 356.0, 17, TEXT_DIM);
-    draw_wrapped_text(&bidder.tell, 24.0, 395.0, 178.0, 20, TEXT);
+    crate::screens::auction_scene::reacting_actor(Rect::new(35.0, 104.0, 104.0, 122.0), bidder);
+    draw_wrapped_text(&bidder.name, 20.0, 265.0, 146.0, 20, TEXT_BRIGHT);
+    label(bidder.bidder_type.label(), 20.0, 328.0, 14, TEXT_DIM);
+    draw_wrapped_text(&bidder.tell, 20.0, 370.0, 146.0, 17, TEXT);
     if button(
-        Rect::new(16.0, 557.0, 190.0, 44.0),
+        Rect::new(16.0, 450.0, 150.0, 44.0),
         "BACK TO LOT",
         true,
         ButtonTone::Ghost,
     ) {
         return Some(AuctionUiAction::FocusRival(index));
-    }
-    if auction.is_running()
-        && button(
-            Rect::new(92.0, 12.0, 128.0, 44.0),
-            "Leave",
-            auction.is_player_active,
-            if auction.next_bid() >= auction.player_walkaway_price {
-                ButtonTone::Danger
-            } else {
-                ButtonTone::Ghost
-            },
-        )
-    {
-        return Some(AuctionUiAction::WalkAway);
     }
     None
 }

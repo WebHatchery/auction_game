@@ -1,39 +1,37 @@
-# Major auction-room redesign verification
+# Auction interaction verification
 
-Validated 19 September 2026. Supersedes the earlier border-removal pass.
+Validated 19 September 2026. The established room layout is retained, with
+40 more virtual pixels of room width and a utility bar reduced from 68 to 44.
+The permanent Notes control and financial sidebar are gone. A contextual
+margin appears at the next-bid limit; rival tells remain available on selection.
 
-The live composition is a pixel-art auction room, with an auctioneer and gavel,
-seated rivals, expressive portraits, a coherent central price/call stage and a
-physical bidding desk. The side catalogue contains financial headroom and a
-subordinate outcome estimate. Detailed finance is optional. The pressure rail
-positions price, researched value range and the player's walk-away threshold.
+Bidders use a short preparation beat before a committed bid, recheck affordability
+before acting, briefly raise their paddle and flash, then lower it. Hesitation
+adds small movement; withdrawal lowers and desaturates the portrait. Observable
+states replace generic interest text. The auctioneer acknowledges bids with a
+brief gesture and changes calls with price, silence, selling status and final calls.
+Behaviour messages fade after three seconds. Wait observations expire after six
+seconds or a new bid; no persistent last-read or duplicate bid-price event remains.
 
-The room changes with play: leaders raise paddles, withdrawn rivals fade,
-price changes briefly enlarge the price, the spotlight narrows in final calls,
-and the auctioneer raises the gavel. The numeric clock appears only in the
-last six seconds. Late bids reopen the cadence using existing overtime rules.
-After the hammer, the room holds the result until the player opens its review.
+The rail contains a current-bid dot, an estimate tick and a personal-limit tick.
+RAISE remains dominant. JUMP has a limited-use outline treatment; WAIT is quiet.
+WALK AWAY is separate from Menu and clear of the bottom edge used by host overlays.
 
 Validation:
-- All 80 tests pass: 75 existing regression/replay/source checks and five new
-  presentation cases covering call phases, overtime presentation, authored
-  voice templates, price ordering and extreme-value pressure scale safety.
-- Strict Clippy passes for all targets/features; formatting and diff checks pass.
-- Every Rust file remains within the 800 physical-line limit.
+- All 85 tests pass, including five new interaction cases for staged bidding,
+  price rechecks, reactive calls, distinct opponent states and save compatibility.
+- Strict all-target Clippy, formatting, diff checks and the source-size gate pass.
 - Default publish.ps1 builds Windows and WebGL and deploys Preview successfully.
-- Project Roost tracking cannot connect to 127.0.0.1:80; deployment succeeds.
-- Native captures cover opening, counterbids, research notes, rival study,
-  room reads, limit warnings, final calls, withdrawal and hammer outcomes.
-  The room was also inspected at 1024x576, including reopened late calls.
-- Browser mouse playthrough exercised new campaign, listings, inspection,
-  registration, starting calls, Raise, Wait, Assert, rival study, optional notes,
-  Walk Away, quick resolution, the hammer result and outcome review.
-- Rechecked the final pointer implementation and assertion feedback in-browser.
-  A previous observation now clears on the player's own Raise/Assert.
-- Walk Away sits beside Menu, clear of the host page's fixed footer overlays.
-- Buttons and custom controls use macroquad-toolkit's touch-aware Pointer and
-  act on release. Physical touchscreen hardware was not available for testing.
+  Project Roost tracking cannot connect to its local service on 127.0.0.1:80.
+- Native deterministic captures cover opening, preparation, a bid flash,
+  hesitation, rival withdrawal, limit context, reads, final calls and player exit.
+  Preparation, bid and withdrawal captures advance the actual simulation.
+- Smaller-screen captures check the opening, preparation and final-call layouts
+  at 1024x576. These supplement the 1280x720 capture set.
+- Input uses the existing toolkit release-based mouse/touch targets. This pass
+  does not claim a new browser playthrough or physical touchscreen verification.
 
-Existing deterministic auction rules, finance rules and save format remain
-unchanged. Transient presentation state resets when loading a saved game.
-Screenshots live directly in this directory, replacing matching prior states.
+Pending decisions and reaction timers serialize with the auction. Older saves
+receive safe defaults. Prices and hammer results remain deterministic across a
+save/resume during preparation. The added preparation delay can change when an
+opponent acts compared with an older version; the campaign replay still passes.

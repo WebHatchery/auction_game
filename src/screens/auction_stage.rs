@@ -7,6 +7,7 @@ use crate::screens::auction_context::{draw_context, draw_pressure};
 use crate::screens::auction_room_panel::{current_bid_caption, draw_bidder_panel};
 use crate::screens::auction_scene::room;
 use crate::sim::finance::FinanceSnapshot;
+use crate::ui::auction_reactions::live_call;
 use crate::ui::auction_view::CallPhase;
 use crate::ui::*;
 use macroquad::prelude::*;
@@ -25,7 +26,7 @@ pub(super) fn draw_live_stage(
         auction,
         app.auction_focus,
     );
-    let context_action = draw_context(app, auction, finance);
+    let context_action = draw_context(app, auction);
     let console_action = draw_console(app, auction, finance);
     rival_action.or(context_action).or(console_action)
 }
@@ -36,32 +37,26 @@ fn draw_narration(app: &App, auction: &Auction, phase: CallPhase) {
         .auction_beat
         .as_ref()
         .filter(|(_, remaining)| *remaining > 0.0);
-    let bump = beat.is_some_and(|(_, remaining)| *remaining > 3.7);
-    let state_color = if urgent { WARNING } else { TEXT_DIM };
-    draw_centered_label(
-        phase.label(),
-        Rect::new(330.0, 192.0, 486.0, 32.0),
-        if urgent { 32 } else { 20 },
-        state_color,
-    );
+    let bump = auction.last_bidder.is_some() && auction.seconds_since_bid < 0.18;
     draw_centered_label(
         &current_bid_caption(auction),
-        Rect::new(248.0, 230.0, 646.0, 24.0),
+        Rect::new(208.0, 230.0, 686.0, 24.0),
         17,
         TEXT_DIM,
     );
     draw_centered_label(
         &format_money(auction.current_bid),
-        Rect::new(246.0, 260.0, 650.0, 82.0),
+        Rect::new(206.0, 260.0, 690.0, 82.0),
         if bump { 80 } else { 74 },
         ACCENT,
     );
-    let call = phase.call(
-        auction.seconds_remaining,
-        auction.current_bid,
-        auction.next_bid(),
+    let call = live_call(auction);
+    draw_centered_label(
+        &call,
+        Rect::new(206.0, 346.0, 690.0, 42.0),
+        if urgent { 32 } else { 26 },
+        if urgent { WARNING } else { TEXT_BRIGHT },
     );
-    draw_centered_label(&call, Rect::new(246.0, 346.0, 650.0, 42.0), 26, TEXT_BRIGHT);
     if urgent {
         let knocks = if phase == CallPhase::Twice { 2 } else { 1 };
         for i in 0..2 {
@@ -86,10 +81,13 @@ fn draw_narration(app: &App, auction: &Auction, phase: CallPhase) {
         .as_ref()
         .filter(|(_, t)| *t > 0.0)
         .map(|(read, _)| read.as_str())
-        .or(auction.last_room_read.as_deref())
     {
-        let ink = crate::ui::BLUE;
-        draw_wrapped_text(&format!("LAST READ: {read}"), 264.0, 406.0, 600.0, 17, ink);
+        let mut ink = crate::ui::BLUE;
+        ink.a = app
+            .auction_read
+            .as_ref()
+            .map_or(0.0, |(_, remaining)| remaining.min(1.0));
+        draw_wrapped_text(read, 264.0, 406.0, 600.0, 17, ink);
     } else if let Some((text, remaining)) = beat {
         let mut ink = TEXT;
         ink.a = remaining.min(1.0);
@@ -134,11 +132,7 @@ pub(super) fn draw_hammer(app: &App, auction: &Auction) -> Option<AuctionUiActio
         ACCENT,
     );
     draw_wrapped_text(&call, 273.0, 385.0, 600.0, 22, TEXT);
-    let context = draw_context(
-        app,
-        auction,
-        crate::sim::finance::finance_snapshot(&app.player, app.market(), auction.current_bid),
-    );
+    let context = draw_context(app, auction);
     let rivals = draw_bidder_panel(
         Rect::new(941.0, 74.0, 235.0, 578.0),
         auction,

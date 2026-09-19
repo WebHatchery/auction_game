@@ -64,6 +64,10 @@ pub struct Bidder {
     pub pressure_tolerance: f32,
     pub overbid_tendency: f32,
     pub reaction_timer: f32,
+    #[serde(default)]
+    pub preparing_bid: bool,
+    #[serde(default)]
+    pub bid_flash: f32,
     pub bid_count: u8,
     pub heat: i32,
     pub mood: BidderMood,

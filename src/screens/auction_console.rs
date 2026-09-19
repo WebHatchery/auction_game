@@ -12,14 +12,14 @@ pub(super) fn draw_console(
     finance: FinanceSnapshot,
 ) -> Option<AuctionUiAction> {
     draw_rectangle(
-        224.0,
+        184.0,
         522.0,
-        694.0,
+        734.0,
         153.0,
         Color::from_rgba(37, 32, 29, 255),
     );
-    draw_rectangle(224.0, 522.0, 694.0, 5.0, Color::from_rgba(92, 71, 49, 255));
-    for x in [231.0, 910.0] {
+    draw_rectangle(184.0, 522.0, 734.0, 5.0, Color::from_rgba(92, 71, 49, 255));
+    for x in [191.0, 910.0] {
         draw_circle(x, 530.0, 2.0, PANEL_EDGE);
     }
     if !auction.is_player_active {
@@ -39,16 +39,16 @@ pub(super) fn draw_console(
     }
     let leading = auction.last_bidder == Some(BidderActor::Player);
     let enabled = finance.can_buy && !leading;
-    let raise = Rect::new(441.0, 537.0, 263.0, 103.0);
+    let raise = Rect::new(421.0, 537.0, 263.0, 103.0);
     draw_paddle(raise, auction, enabled);
     if enabled && rect_clicked(raise) {
         return Some(AuctionUiAction::Bid);
     }
-    let assert = Rect::new(243.0, 545.0, 178.0, 88.0);
+    let jump = Rect::new(203.0, 548.0, 188.0, 83.0);
     let jump_finance = finance_snapshot(&app.player, app.market(), auction.jump_bid());
     let jump_enabled = !leading && auction.jump_bid_available && jump_finance.can_buy;
-    draw_assert(assert, auction, jump_enabled);
-    if jump_enabled && rect_clicked(assert) {
+    draw_jump(jump, auction, jump_enabled);
+    if jump_enabled && rect_clicked(jump) {
         return Some(AuctionUiAction::JumpBid);
     }
     let observe = Rect::new(725.0, 542.0, 172.0, 93.0);
@@ -66,6 +66,18 @@ pub(super) fn draw_console(
             17,
             WARNING,
         );
+    }
+    if button(
+        Rect::new(16.0, 532.0, 150.0, 54.0),
+        "WALK AWAY",
+        true,
+        if auction.next_bid() >= auction.player_walkaway_price {
+            ButtonTone::Danger
+        } else {
+            ButtonTone::Secondary
+        },
+    ) {
+        return Some(AuctionUiAction::WalkAway);
     }
     None
 }
@@ -122,9 +134,9 @@ fn draw_paddle(mut rect: Rect, auction: &Auction, enabled: bool) {
     );
 }
 
-fn draw_assert(rect: Rect, auction: &Auction, enabled: bool) {
+fn draw_jump(rect: Rect, auction: &Auction, enabled: bool) {
     let color = if enabled { WARNING } else { TEXT_DIM };
-    draw_line(rect.x, rect.y, rect.x, rect.y + rect.h, 3.0, color);
+    draw_rectangle_lines(rect.x, rect.y, rect.w, rect.h, 1.0, color);
     for offset in [0.0, 8.0] {
         draw_line(
             rect.x + 16.0 + offset,
@@ -161,15 +173,13 @@ fn draw_assert(rect: Rect, auction: &Auction, enabled: bool) {
         26,
         if enabled { TEXT_BRIGHT } else { TEXT_DIM },
     );
-    label("1 use", rect.x + 16.0, rect.y + 83.0, 14, TEXT_DIM);
+    if auction.jump_bid_available {
+        label("1 USE", rect.x + 91.0, rect.y + 30.0, 14, color);
+    }
 }
 
 fn draw_observe(rect: Rect, reading: bool) {
-    let color = if reading {
-        TEXT_BRIGHT
-    } else {
-        crate::ui::BLUE
-    };
+    let color = if reading { TEXT_BRIGHT } else { TEXT_DIM };
     draw_ellipse(rect.x + 23.0, rect.y + 14.0, 18.0, 9.0, 0.0, color);
     draw_circle(rect.x + 23.0, rect.y + 14.0, 6.0, BACKGROUND);
     label("WAIT", rect.x + 53.0, rect.y + 23.0, 22, color);

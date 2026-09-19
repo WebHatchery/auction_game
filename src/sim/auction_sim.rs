@@ -46,6 +46,8 @@ pub fn create_auction(
             pressure_tolerance,
             overbid_tendency,
             reaction_timer: 1.0 + offset as f32 * 0.55,
+            preparing_bid: false,
+            bid_flash: 0.0,
             bid_count: 0,
             heat: 35 + (profile.aggression * 35.0) as i32,
             mood: BidderMood::Watching,
@@ -72,6 +74,7 @@ pub fn create_auction(
         bid_increment: BID_INCREMENT,
         seconds_remaining: AUCTION_DURATION_SECONDS,
         call_timer: 1.0,
+        seconds_since_bid: 0.0,
         bidders,
         last_bidder: None,
         is_player_active: true,
@@ -125,6 +128,10 @@ pub fn update_auction(auction: &mut Auction, dt: f32) {
     auction.temperature = auction_temperature(auction);
     auction.seconds_remaining = (auction.seconds_remaining - dt).max(0.0);
     auction.call_timer -= dt;
+    auction.seconds_since_bid += dt;
+    for bidder in &mut auction.bidders {
+        bidder.bid_flash = (bidder.bid_flash - dt).max(0.0);
+    }
 
     if auction.call_timer <= 0.0 {
         if should_place_vendor_bid(auction) {
@@ -142,6 +149,11 @@ pub fn update_auction(auction: &mut Auction, dt: f32) {
             continue;
         }
         if auction.last_bidder == Some(BidderActor::Npc(index)) {
+            if auction.bidders[index].bid_flash <= 0.0
+                && auction.bidders[index].mood == BidderMood::Interested
+            {
+                auction.bidders[index].mood = BidderMood::Watching;
+            }
             continue;
         }
 
@@ -159,12 +171,28 @@ pub fn update_auction(auction: &mut Auction, dt: f32) {
 
         let chance = bid_chance(auction, index, next_bid);
 
-        if auction_rng_chance(auction, chance) {
+        if auction.bidders[index].preparing_bid {
             bidder_to_place = Some(index);
             break;
         }
-
-        auction.bidders[index].reaction_timer = auction_rng_range(auction, 1.1, 3.1);
+        if auction_rng_chance(auction, chance) {
+            auction.bidders[index].preparing_bid = true;
+            auction.bidders[index].reaction_timer =
+                if auction.bidders[index].mood == BidderMood::Hesitating {
+                    1.0
+                } else {
+                    0.65
+                };
+        } else {
+            auction.bidders[index].mood = BidderMood::Hesitating;
+            auction.bidders[index].tell = tell_for(
+                auction.bidders[index].bidder_type,
+                BidderMood::Hesitating,
+                &auction.property,
+            )
+            .to_string();
+            auction.bidders[index].reaction_timer = auction_rng_range(auction, 1.1, 3.1);
+        }
     }
 
     if let Some(index) = bidder_to_place {
@@ -184,6 +212,7 @@ pub fn place_player_bid(auction: &mut Auction) {
 
     let next_bid = auction.next_bid();
     auction.current_bid = next_bid;
+    auction.seconds_since_bid = 0.0;
     auction.last_room_read = None;
     auction.last_bidder = Some(BidderActor::Player);
     auction.player_bid_count += 1;
@@ -214,6 +243,7 @@ pub fn place_player_jump_bid(auction: &mut Auction) -> String {
 
     let jump_bid = auction.jump_bid();
     auction.current_bid = jump_bid;
+    auction.seconds_since_bid = 0.0;
     auction.last_room_read = None;
     auction.last_bidder = Some(BidderActor::Player);
     auction.jump_bid_available = false;
@@ -410,8 +440,11 @@ fn place_npc_bid(auction: &mut Auction, index: usize) {
     let next_bid = npc_bid_amount(auction, index);
     let was_stretch = next_bid > auction.bidders[index].max_price;
     auction.current_bid = next_bid;
+    auction.seconds_since_bid = 0.0;
     auction.last_room_read = None;
     auction.last_bidder = Some(BidderActor::Npc(index));
+    auction.bidders[index].preparing_bid = false;
+    auction.bidders[index].bid_flash = 1.1;
     auction.bidders[index].bid_count += 1;
     auction.bidders[index].heat = (auction.bidders[index].heat + 12).min(100);
     if was_stretch {
@@ -581,6 +614,8 @@ fn auctioneer_line(auction: &Auction) -> String {
 
 fn retire_bidder(auction: &mut Auction, index: usize) {
     auction.bidders[index].active = false;
+    auction.bidders[index].preparing_bid = false;
+    auction.bidders[index].bid_flash = 0.0;
     auction.bidders[index].mood = BidderMood::Out;
     auction.bidders[index].heat = 0;
     auction.bidders[index].tell = exit_tell(auction.bidders[index].bidder_type).to_string();

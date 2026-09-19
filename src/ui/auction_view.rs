@@ -73,6 +73,7 @@ impl BidPressure {
 struct AuctionVoice {
     phases: [String; 6],
     calls: [Vec<String>; 6],
+    reactions: std::collections::BTreeMap<String, String>,
 }
 fn voice() -> &'static AuctionVoice {
     static VOICE: std::sync::OnceLock<AuctionVoice> = std::sync::OnceLock::new();
@@ -90,4 +91,11 @@ fn voice() -> &'static AuctionVoice {
         );
         data
     })
+}
+
+pub(crate) fn reaction_text(key: &str) -> &'static str {
+    voice()
+        .reactions
+        .get(key)
+        .expect("auction reaction text must exist")
 }

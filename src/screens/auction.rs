@@ -22,7 +22,6 @@ use crate::ui::*;
 use macroquad::prelude::*;
 
 pub(super) enum AuctionUiAction {
-    ToggleNotes,
     ReviewOutcome,
     FocusRival(usize),
     BeginAuction,
@@ -112,14 +111,12 @@ impl App {
                 };
             }
 
-            Some(AuctionUiAction::ToggleNotes) => {
-                self.auction_notes_open = !self.auction_notes_open
-            }
             Some(AuctionUiAction::BeginAuction) => {
                 if let Some(auction) = self.current_auction.as_mut() {
                     begin_auction_calls(auction);
                     self.status =
-                        "Bidding is live. Tap RAISE, JUMP, WAIT & READ ROOM, or Leave.".to_string();
+                        "Bidding is live. Tap RAISE, JUMP, WAIT & READ ROOM, or WALK AWAY."
+                            .to_string();
                     self.play_sound(crate::audio::SoundEffect::Button);
                 }
             }

@@ -72,7 +72,6 @@ pub struct App {
     pub(crate) screen: Screen,
     pub(crate) auction_result_open: bool,
     pub(crate) auction_focus: Option<usize>,
-    pub(crate) auction_notes_open: bool,
     pub(crate) auction_read: Option<(String, f32)>,
     pub(crate) auction_beat: Option<(String, f32)>,
     pub(crate) current_auction: Option<crate::model::Auction>,
@@ -116,7 +115,6 @@ impl App {
             screen: Screen::Title,
             auction_result_open: false,
             auction_focus: None,
-            auction_notes_open: false,
             auction_read: None,
             auction_beat: None,
             current_auction: None,
@@ -158,33 +156,19 @@ impl App {
                 if let Some((_, remaining)) = self.auction_read.as_mut() {
                     *remaining = (*remaining - dt).max(0.0);
                 }
+                let before = auction.bidders.clone();
                 let previous_bid = auction.current_bid;
-                let active: Vec<bool> =
-                    auction.bidders.iter().map(|bidder| bidder.active).collect();
                 if let Some((_, remaining)) = self.auction_beat.as_mut() {
                     *remaining = (*remaining - dt).max(0.0);
                 }
                 update_auction(auction, dt);
-                let departed = auction
-                    .bidders
-                    .iter()
-                    .zip(active)
-                    .find(|(bidder, was_active)| *was_active && !bidder.active);
-                if let Some((bidder, _)) = departed {
-                    self.auction_beat =
-                        Some((format!("{} lowers their paddle. Out.", bidder.name), 4.0));
+                if previous_bid != auction.current_bid {
+                    self.auction_read = None;
                 }
-                if auction.current_bid != previous_bid {
-                    if let Some(crate::model::BidderActor::Npc(index)) = auction.last_bidder {
-                        self.auction_beat = Some((
-                            format!(
-                                "{} counters at {}.",
-                                auction.bidders[index].name,
-                                format_money(auction.current_bid)
-                            ),
-                            4.0,
-                        ));
-                    }
+                if let Some(event) =
+                    crate::ui::auction_reactions::behavioral_event(&before, auction)
+                {
+                    self.auction_beat = Some((event, 3.0));
                 }
             }
             let completed_status = self
@@ -453,7 +437,6 @@ impl App {
         };
         self.auction_result_open = false;
         self.auction_focus = None;
-        self.auction_notes_open = false;
         self.auction_beat = None;
         self.auction_read = None;
         self.current_auction = Some(create_auction(

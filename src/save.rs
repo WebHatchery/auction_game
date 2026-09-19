@@ -118,7 +118,6 @@ impl App {
         self.current_auction = save.current_auction;
         self.auction_result_open = false;
         self.auction_focus = None;
-        self.auction_notes_open = false;
         self.auction_read = None;
         self.auction_beat = None;
         self.purchase_debrief = save.purchase_debrief;

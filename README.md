@@ -11,20 +11,23 @@ seated rivals with raised or lowered paddles, and a bidding desk in front of
 you. The centre connects the current leader, price, changing auctioneer calls,
 reactions and your controls. No workflow navigation appears during bidding.
 
-Tap the large RAISE paddle for one step. JUMP is a once-per-room jump that
-can rattle investors or provoke emotional bidders. WAIT & READ ROOM yields
-tempo for an observation, shown briefly as a last read. Leave sits beside
-the menu, away from bidding controls, and becomes prominent at your limit.
-Mouse and touch releases use the toolkit's shared pointer handling.
+Tap the large RAISE paddle for one step. The outlined JUMP is a once-per-room
+challenge that can rattle investors or provoke emotional bidders. The quieter
+WAIT & READ ROOM yields tempo for an observation that fades. WALK AWAY sits
+apart from the bidding desk as an auction decision; Menu remains a small
+utility control. Mouse and touch releases use the toolkit's shared pointer handling.
 
-Rivals have distinct pixel portraits, archetypes, behaviour and live moods.
-Tap a rival to study its current tell. Notes expands the financial details
-beside the stage, without stopping the room.
+Rivals calculate, prepare, hesitate, react to pressure and withdraw as their
+actual decisions unfold. A committed bid has a short preparation beat and
+rechecks the price before acting. Paddles lift briefly, bidding portraits flash,
+hesitant bidders shift, and withdrawn bidders slump with lowered paddles.
+Tap a rival for a contextual tell. Financial research stays out of the permanent
+left column; estimated margin reappears when the next bid reaches your limit.
 
-A pressure rail positions the current bid against the researched value band
-and your walk-away limit. The catalogue subordinates finance headroom and
-estimated margin; detailed cash and bank figures live behind notes. These
-remain estimates, not the rivals' hidden budgets.
+The price rail uses one current-bid dot and two reference marks for estimated
+value and your limit. Auctioneer calls respond to new bids, silence, selling
+status and final calls. The line below carries a fading behavioural observation,
+without repeating the leader and price. Pending bidder decisions survive saves.
 
 As the room slows, the auctioneer changes cadence. Final calls tighten the
 spotlight, raise the gavel and count the calls visually. A precise clock only

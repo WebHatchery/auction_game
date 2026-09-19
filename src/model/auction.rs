@@ -66,6 +66,8 @@ pub struct Auction {
     pub bid_increment: i64,
     pub seconds_remaining: f32,
     pub call_timer: f32,
+    #[serde(default)]
+    pub seconds_since_bid: f32,
     pub bidders: Vec<Bidder>,
     pub last_bidder: Option<BidderActor>,
     pub is_player_active: bool,

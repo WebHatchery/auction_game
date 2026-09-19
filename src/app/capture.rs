@@ -62,15 +62,41 @@ impl App {
             "detail_compact" => self.seed_property_detail_capture(6),
             "detail_premium" => self.seed_property_detail_capture(4),
             "detail_large_block" => self.seed_property_detail_capture(11),
-            "auction" | "auction_notes" | "auction_limit" | "auction_rival" | "auction_twice"
-            | "auction_out" => {
+            "auction_preparing" | "auction_bid" | "auction_hesitant" | "auction_withdrawn" => {
+                self.start_new_game();
+                if let Some(property) = self.available_properties.first().cloned() {
+                    self.start_auction(property.id);
+                    if let Some(auction) = self.current_auction.as_mut() {
+                        begin_auction_calls(auction);
+                        for _ in 0..550 {
+                            let before = auction.bidders.clone();
+                            crate::sim::auction_sim::update_auction(auction, 0.1);
+                            if let Some(event) =
+                                crate::ui::auction_reactions::behavioral_event(&before, auction)
+                            {
+                                self.auction_beat = Some((event, 3.0));
+                            }
+                            let ready = auction.bidders.iter().any(|bidder| match scene {
+                                "auction_preparing" => bidder.preparing_bid,
+                                "auction_bid" => bidder.bid_flash > 0.9,
+                                "auction_hesitant" => bidder.mood == BidderMood::Hesitating,
+                                _ => !bidder.active,
+                            });
+                            if ready {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            "auction" | "auction_limit" | "auction_rival" | "auction_twice" | "auction_out" => {
                 self.start_new_game();
                 if let Some(property) = self.available_properties.first().cloned() {
                     self.start_auction(property.id);
                     if let Some(auction) = self.current_auction.as_mut() {
                         begin_auction_calls(auction);
                     }
-                    self.auction_notes_open = scene == "auction_notes";
+
                     self.auction_focus = (scene == "auction_rival").then_some(2);
                     if let Some(auction) = self.current_auction.as_mut() {
                         if scene == "auction_twice" {
@@ -81,6 +107,10 @@ impl App {
                         }
                         if scene == "auction_limit" {
                             auction.current_bid = auction.player_walkaway_price;
+                            auction.last_bidder = Some(BidderActor::Npc(2));
+                            auction.on_market_announced = true;
+                            auction.bid_increment =
+                                crate::sim::auction_events::ON_MARKET_BID_INCREMENT;
                         }
                     }
                     self.status =
@@ -178,7 +208,8 @@ impl App {
                     }
                     if let Some(auction) = self.current_auction.as_mut() {
                         begin_auction_calls(auction);
-                        hold_player_position(auction);
+                        let read = hold_player_position(auction);
+                        self.auction_read = Some((read, 6.0));
                     }
                 }
             }

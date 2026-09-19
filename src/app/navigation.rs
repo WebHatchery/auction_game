@@ -6,9 +6,16 @@ use macroquad::prelude::*;
 
 impl App {
     pub(super) fn draw_header(&mut self) {
-        draw_rectangle(0.0, 0.0, ui_width(), 68.0, PANEL_DARK);
+        let in_auction = self.screen == Screen::Auction;
+        draw_rectangle(
+            0.0,
+            0.0,
+            ui_width(),
+            if in_auction { 44.0 } else { 68.0 },
+            PANEL_DARK,
+        );
         if button(
-            Rect::new(16.0, 12.0, 72.0, 44.0),
+            Rect::new(16.0, if in_auction { 0.0 } else { 12.0 }, 72.0, 44.0),
             "Menu",
             true,
             ButtonTone::Ghost,
@@ -16,14 +23,7 @@ impl App {
             self.esc_menu_open = !self.esc_menu_open;
             self.esc_settings_open = false;
         }
-        if self.screen == Screen::Auction {
-            if self
-                .current_auction
-                .as_ref()
-                .is_some_and(|auction| auction.is_running() && auction.on_market_announced)
-            {
-                label("SELLING", 740.0, 40.0, 17, POSITIVE);
-            }
+        if in_auction {
             return;
         }
         label("Auction House Tycoon", 94.0, 42.0, 30, TEXT_BRIGHT);
