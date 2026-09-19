@@ -1,6 +1,6 @@
 //! A live rostrum connects the auctioneer, price, reactions and bidding desk.
 use crate::app::App;
-use crate::model::{Auction, BidderActor};
+use crate::model::Auction;
 use crate::screens::auction::AuctionUiAction;
 use crate::screens::auction_console::draw_console;
 use crate::screens::auction_context::{draw_context, draw_pressure};
@@ -94,17 +94,6 @@ fn draw_narration(app: &App, auction: &Auction, phase: CallPhase) {
         let mut ink = TEXT;
         ink.a = remaining.min(1.0);
         draw_centered_label(text, Rect::new(246.0, 397.0, 650.0, 25.0), 20, ink);
-    } else if !urgent {
-        draw_centered_label(
-            if auction.last_bidder == Some(BidderActor::Player) {
-                "Your paddle leads. The room is deciding."
-            } else {
-                "Listen to the call. Watch their hands."
-            },
-            Rect::new(246.0, 397.0, 650.0, 25.0),
-            17,
-            TEXT_DIM,
-        );
     }
 }
 

@@ -17,39 +17,12 @@ impl App {
             self.esc_settings_open = false;
         }
         if self.screen == Screen::Auction {
-            label(
-                if self
-                    .current_auction
-                    .as_ref()
-                    .is_some_and(|auction| !auction.is_running())
-                {
-                    "SATURDAY / THE HAMMER"
-                } else {
-                    "SATURDAY / LIVE AUCTION"
-                },
-                244.0,
-                40.0,
-                17,
-                TEXT_DIM,
-            );
-            if let Some(auction) = self.current_auction.as_ref() {
-                label(
-                    if !auction.is_running() {
-                        "HAMMER DOWN"
-                    } else if auction.on_market_announced {
-                        "ON THE MARKET / SELLING"
-                    } else {
-                        "RESERVE NOT YET MET"
-                    },
-                    740.0,
-                    40.0,
-                    17,
-                    if auction.on_market_announced {
-                        POSITIVE
-                    } else {
-                        TEXT_DIM
-                    },
-                );
+            if self
+                .current_auction
+                .as_ref()
+                .is_some_and(|auction| auction.is_running() && auction.on_market_announced)
+            {
+                label("SELLING", 740.0, 40.0, 17, POSITIVE);
             }
             return;
         }

@@ -18,16 +18,8 @@ pub(super) fn draw_context(
         .auction_focus
         .filter(|index| *index < auction.bidders.len())
     {
-        return draw_rival_notes(app, auction, index);
+        return draw_rival_notes(auction, index);
     }
-    label(
-        &format!("LOT {:02}", auction.property.id),
-        24.0,
-        99.0,
-        26,
-        ACCENT,
-    );
-    label("YOUR CATALOGUE", 24.0, 125.0, 14, TEXT_DIM);
     draw_house_art(Rect::new(24.0, 148.0, 174.0, 124.0), &auction.property);
     draw_wrapped_text(
         &auction.property.address,
@@ -37,13 +29,12 @@ pub(super) fn draw_context(
         24,
         TEXT_BRIGHT,
     );
-    label(&auction.property.suburb, 24.0, 365.0, 17, TEXT_DIM);
     if app.auction_notes_open {
         draw_notes(app, auction, finance);
     } else {
         let headroom =
             (max_financeable_bid(&app.player, app.market()) - auction.current_bid).max(0);
-        label("FINANCE HEADROOM", 24.0, 414.0, 14, TEXT_DIM);
+        label("Available to bid", 24.0, 414.0, 14, TEXT_DIM);
         label(
             &format_money(headroom),
             24.0,
@@ -54,7 +45,7 @@ pub(super) fn draw_context(
         let margin =
             projected_purchase_margin(&auction.property, auction.current_bid, app.market());
         draw_wrapped_text(
-            &format!("At this price: {} estimated margin.", format_money(margin)),
+            &format!("Est. margin {}", format_money(margin)),
             24.0,
             484.0,
             177.0,
@@ -65,9 +56,9 @@ pub(super) fn draw_context(
     if button(
         Rect::new(16.0, 557.0, 190.0, 44.0),
         if app.auction_notes_open {
-            "CLOSE NOTES"
+            "Close notes"
         } else {
-            "PROPERTY NOTES"
+            "Notes"
         },
         true,
         ButtonTone::Ghost,
@@ -81,7 +72,7 @@ pub(super) fn draw_context(
     if auction.is_running()
         && button(
             Rect::new(92.0, 12.0, 128.0, 44.0),
-            "WALK AWAY",
+            "Leave",
             auction.is_player_active,
             if near_limit {
                 ButtonTone::Danger
@@ -159,14 +150,14 @@ pub(super) fn draw_pressure(app: &App, auction: &Auction) {
         TEXT_BRIGHT,
     );
     label(
-        &format!("WALK-AWAY {}", format_money(auction.player_walkaway_price)),
+        &format!("Limit {}", format_money(auction.player_walkaway_price)),
         (limit_x - 120.0).clamp(252.0, 660.0),
         468.0,
         14,
         if over { NEGATIVE } else { WARNING },
     );
     label(
-        &format!("RESEARCH ESTIMATE {}", format_money(estimate)),
+        &format!("Est. value {}", format_money(estimate)),
         252.0,
         511.0,
         14,
@@ -182,7 +173,7 @@ pub(super) fn draw_pressure(app: &App, auction: &Auction) {
         } else if auction.next_bid() >= auction.player_walkaway_price {
             "LAST STEP TO YOUR LIMIT"
         } else {
-            "BID PRESSURE"
+            ""
         },
         657.0,
         511.0,
@@ -191,9 +182,8 @@ pub(super) fn draw_pressure(app: &App, auction: &Auction) {
     );
 }
 
-fn draw_rival_notes(app: &App, auction: &Auction, index: usize) -> Option<AuctionUiAction> {
+fn draw_rival_notes(auction: &Auction, index: usize) -> Option<AuctionUiAction> {
     let bidder = &auction.bidders[index];
-    label("STUDYING", 24.0, 99.0, 20, crate::ui::BLUE);
     crate::screens::auction_scene::actor(
         Rect::new(54.0, 130.0, 104.0, 122.0),
         bidder.bidder_type,
@@ -203,20 +193,6 @@ fn draw_rival_notes(app: &App, auction: &Auction, index: usize) -> Option<Auctio
     draw_wrapped_text(&bidder.name, 24.0, 292.0, 178.0, 24, TEXT_BRIGHT);
     label(bidder.bidder_type.label(), 24.0, 356.0, 17, TEXT_DIM);
     draw_wrapped_text(&bidder.tell, 24.0, 395.0, 178.0, 20, TEXT);
-    let history = app
-        .player
-        .rival_notebook
-        .iter()
-        .find(|record| record.name == bidder.name);
-    let note = history
-        .map(|record| {
-            format!(
-                "Seen in {} rooms. Won {}.",
-                record.auctions_met, record.auctions_won
-            )
-        })
-        .unwrap_or_else(|| "First meeting. Watch how they answer your next bid.".to_string());
-    draw_wrapped_text(&note, 24.0, 481.0, 178.0, 17, TEXT_DIM);
     if button(
         Rect::new(16.0, 557.0, 190.0, 44.0),
         "BACK TO LOT",
@@ -228,7 +204,7 @@ fn draw_rival_notes(app: &App, auction: &Auction, index: usize) -> Option<Auctio
     if auction.is_running()
         && button(
             Rect::new(92.0, 12.0, 128.0, 44.0),
-            "WALK AWAY",
+            "Leave",
             auction.is_player_active,
             if auction.next_bid() >= auction.player_walkaway_price {
                 ButtonTone::Danger

@@ -11,15 +11,15 @@ seated rivals with raised or lowered paddles, and a bidding desk in front of
 you. The centre connects the current leader, price, changing auctioneer calls,
 reactions and your controls. No workflow navigation appears during bidding.
 
-Tap the large RAISE paddle for one step. ASSERT is a once-per-room jump that
+Tap the large RAISE paddle for one step. JUMP is a once-per-room jump that
 can rattle investors or provoke emotional bidders. WAIT & READ ROOM yields
-tempo for an observation, shown briefly as a last read. WALK AWAY sits beside
+tempo for an observation, shown briefly as a last read. Leave sits beside
 the menu, away from bidding controls, and becomes prominent at your limit.
 Mouse and touch releases use the toolkit's shared pointer handling.
 
-Rivals have distinct pixel portraits, archetypes, behaviour and live tells.
-Tap a rival to study its current tell and your prior encounters. PROPERTY
-NOTES expands the catalogue beside the stage, without stopping the room.
+Rivals have distinct pixel portraits, archetypes, behaviour and live moods.
+Tap a rival to study its current tell. Notes expands the financial details
+beside the stage, without stopping the room.
 
 A pressure rail positions the current bid against the researched value band
 and your walk-away limit. The catalogue subordinates finance headroom and
@@ -52,7 +52,7 @@ campaign structure, explained outside the live auction.
 - Open in $10,000 rises, then bid in tighter $5,000 steps after the on-market call.
 - Negotiate a visible vendor counteroffer after a pass-in, or leave the private deal untouched.
 - Test the vendor once at the public-room price before deciding whether to meet that counteroffer.
-- See when the reserve is not yet met, and use full diligence to read a passed-in seller as flexible, negotiable, or firm without revealing their exact floor.
+- See when the property is selling, and use full diligence to read a passed-in seller as flexible, negotiable, or firm without revealing their exact floor.
 - Build a season record that credits disciplined exits alongside purchases and profitable sales.
 - Close each season with the registrations deliberately passed up, final rent, realised sale profit, and auction record visible together.
 - Pay down individual property loans when freeing bank headroom matters more than keeping cash liquid, with the exact weekly interest effect reported after payment.

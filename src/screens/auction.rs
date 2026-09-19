@@ -119,8 +119,7 @@ impl App {
                 if let Some(auction) = self.current_auction.as_mut() {
                     begin_auction_calls(auction);
                     self.status =
-                        "Bidding is live. Tap RAISE, ASSERT, WAIT & READ ROOM, or WALK AWAY."
-                            .to_string();
+                        "Bidding is live. Tap RAISE, JUMP, WAIT & READ ROOM, or Leave.".to_string();
                     self.play_sound(crate::audio::SoundEffect::Button);
                 }
             }

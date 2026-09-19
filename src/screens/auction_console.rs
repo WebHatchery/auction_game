@@ -59,18 +59,14 @@ pub(super) fn draw_console(
     if rect_clicked(observe) {
         return Some(AuctionUiAction::Hold);
     }
-    draw_centered_label(
-        if leading {
-            "You lead. Let them answer."
-        } else if !finance.can_buy {
-            "Finance limit reached. Keep the paddle down."
-        } else {
-            "Tap the paddle to take the room."
-        },
-        Rect::new(240.0, 650.0, 656.0, 22.0),
-        17,
-        TEXT_DIM,
-    );
+    if !finance.can_buy && !leading {
+        draw_centered_label(
+            "Finance limit reached",
+            Rect::new(240.0, 650.0, 656.0, 22.0),
+            17,
+            WARNING,
+        );
+    }
     None
 }
 
@@ -119,7 +115,7 @@ fn draw_paddle(mut rect: Rect, auction: &Auction, enabled: bool) {
         BACKGROUND,
     );
     draw_centered_label(
-        &format!("PADDLE {} / ONE STEP", auction.player_paddle_number()),
+        &format!("PADDLE {}", auction.player_paddle_number()),
         Rect::new(rect.x, rect.y + 80.0, rect.w, 18.0),
         14,
         BACKGROUND,
@@ -149,9 +145,9 @@ fn draw_assert(rect: Rect, auction: &Auction, enabled: bool) {
     }
     label(
         if auction.jump_bid_available {
-            "ASSERT"
+            "JUMP"
         } else {
-            "ASSERT USED"
+            "JUMP USED"
         },
         rect.x + 16.0,
         rect.y + 30.0,
@@ -165,13 +161,7 @@ fn draw_assert(rect: Rect, auction: &Auction, enabled: bool) {
         26,
         if enabled { TEXT_BRIGHT } else { TEXT_DIM },
     );
-    label(
-        "Jump bid / one use",
-        rect.x + 16.0,
-        rect.y + 83.0,
-        14,
-        TEXT_DIM,
-    );
+    label("1 use", rect.x + 16.0, rect.y + 83.0, 14, TEXT_DIM);
 }
 
 fn draw_observe(rect: Rect, reading: bool) {
@@ -184,11 +174,4 @@ fn draw_observe(rect: Rect, reading: bool) {
     draw_circle(rect.x + 23.0, rect.y + 14.0, 6.0, BACKGROUND);
     label("WAIT", rect.x + 53.0, rect.y + 23.0, 22, color);
     label("& READ ROOM", rect.x + 3.0, rect.y + 50.0, 20, color);
-    label(
-        "Give them the floor",
-        rect.x + 3.0,
-        rect.y + 77.0,
-        14,
-        TEXT_DIM,
-    );
 }

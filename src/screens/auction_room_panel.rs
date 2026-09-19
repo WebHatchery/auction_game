@@ -6,21 +6,18 @@ use macroquad::prelude::*;
 pub(super) fn current_bid_caption(auction: &Auction) -> String {
     match auction.last_bidder.as_ref() {
         Some(BidderActor::Player) => {
-            format!(
-                "Current Bid · Paddle {} leads",
-                auction.player_paddle_number()
-            )
+            format!("Your paddle {} leads", auction.player_paddle_number())
         }
         Some(BidderActor::Npc(index)) => format!(
-            "Current Bid · {} leads",
+            "{} leads",
             auction
                 .bidders
                 .get(*index)
                 .map(|bidder| bidder.name.as_str())
                 .unwrap_or("another bidder")
         ),
-        Some(BidderActor::Vendor) => "Declared Vendor Bid · not yet selling".to_string(),
-        None => "Opening Call · no leading bidder".to_string(),
+        Some(BidderActor::Vendor) => "Vendor bid".to_string(),
+        None => String::new(),
     }
 }
 
@@ -29,7 +26,6 @@ pub(super) fn draw_bidder_panel(
     auction: &Auction,
     focus: Option<usize>,
 ) -> Option<crate::screens::auction::AuctionUiAction> {
-    label("THE COMPETITION", rect.x, rect.y + 18.0, 17, TEXT_DIM);
     let mut action = None;
     for (index, bidder) in auction.bidders.iter().enumerate() {
         let y = rect.y + 50.0 + index as f32 * 170.0;
@@ -74,11 +70,9 @@ pub(super) fn draw_bidder_panel(
             17,
             color,
         );
-        draw_wrapped_text(&bidder.tell, rect.x, y + 113.0, rect.w, 17, TEXT);
         if rect_clicked(Rect::new(rect.x - 8.0, y - 22.0, rect.w + 8.0, 160.0)) {
             action = Some(crate::screens::auction::AuctionUiAction::FocusRival(index));
         }
     }
-    label("Tap a rival to study them.", rect.x, 654.0, 14, TEXT_DIM);
     action
 }
