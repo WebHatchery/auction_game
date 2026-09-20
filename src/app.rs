@@ -23,7 +23,6 @@ use macroquad_toolkit::audio::SoundManager;
 use macroquad_toolkit::settings::{
     GameSettings, SettingsFeatures, SettingsPanel, SettingsPanelAction, SettingsSession,
 };
-use macroquad_toolkit::ui::Pointer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -84,11 +83,19 @@ pub struct App {
     pub(crate) campaign_status: CampaignStatus,
     pub(crate) listing_filter: usize,
     pub(crate) portfolio_index: usize,
+    pub(crate) portfolio_page: usize,
     pub(crate) auction_registrations: u8,
     pub(crate) auctioned_property_ids: Vec<PropertyId>,
     pub(crate) walkaway_price: i64,
     pub(crate) walkaway_style: WalkawayStyle,
+    pub(crate) property_report_open: bool,
+    pub(crate) sale_report_open: bool,
+    pub(crate) portfolio_finance_open: bool,
+    pub(crate) portfolio_sale_open: bool,
+    pub(crate) esc_help_open: bool,
     pub(crate) status: String,
+    pub(crate) status_timer: f32,
+    pub(crate) status_snapshot: String,
 }
 
 impl App {
@@ -127,17 +134,32 @@ impl App {
             campaign_status: CampaignStatus::Active,
             listing_filter: 0,
             portfolio_index: 0,
+            portfolio_page: 0,
             auction_registrations: WEEKLY_AUCTION_REGISTRATIONS,
             auctioned_property_ids: Vec::new(),
             walkaway_price: 600_000,
             walkaway_style: WalkawayStyle::Balanced,
+            property_report_open: false,
+            sale_report_open: false,
+            portfolio_finance_open: false,
+            portfolio_sale_open: false,
+            esc_help_open: false,
             status: "Read the market, pick a property, and keep your margin alive.".to_string(),
+            status_timer: 0.0,
+            status_snapshot: "Read the market, pick a property, and keep your margin alive."
+                .to_string(),
         };
         app.refresh_available_properties();
         app
     }
 
     pub fn update(&mut self, dt: f32) {
+        if self.status != self.status_snapshot {
+            self.status_snapshot = self.status.clone();
+            self.status_timer = 5.0;
+        } else {
+            self.status_timer = (self.status_timer - dt).max(0.0);
+        }
         if self.screen != Screen::Title && is_key_pressed(KeyCode::Escape) {
             if self.esc_settings_open {
                 self.esc_settings_open = false;
@@ -273,6 +295,7 @@ impl App {
                 self.walkaway_style,
                 self.player.reputation,
             );
+            self.property_report_open = false;
             self.screen = Screen::PropertyDetail(index);
         }
     }
@@ -293,10 +316,16 @@ impl App {
         self.campaign_status = CampaignStatus::Active;
         self.listing_filter = 0;
         self.portfolio_index = 0;
+        self.portfolio_page = 0;
         self.auction_registrations = WEEKLY_AUCTION_REGISTRATIONS;
         self.auctioned_property_ids.clear();
         self.walkaway_price = 600_000;
         self.walkaway_style = WalkawayStyle::Balanced;
+        self.property_report_open = false;
+        self.sale_report_open = false;
+        self.portfolio_finance_open = false;
+        self.portfolio_sale_open = false;
+        self.esc_help_open = false;
         self.status = "Read the brief, then tap OPEN WEEK 1 LISTINGS.".to_string();
         self.title_settings_open = false;
         self.esc_menu_open = false;
@@ -311,6 +340,11 @@ impl App {
         self.esc_menu_open = false;
         self.esc_settings_open = false;
         self.settings_session = None;
+        self.property_report_open = false;
+        self.sale_report_open = false;
+        self.portfolio_finance_open = false;
+        self.portfolio_sale_open = false;
+        self.esc_help_open = false;
     }
 
     pub(crate) fn open_settings(&mut self) {
@@ -322,12 +356,7 @@ impl App {
     }
 
     pub(crate) fn draw_settings_editor(&mut self, rect: Rect) {
-        let pointer = Pointer::read(|position| {
-            vec2(
-                position.x * ui_width() / screen_width().max(1.0),
-                position.y * ui_height() / screen_height().max(1.0),
-            )
-        });
+        let pointer = ui_pointer();
         let action = if let Some(session) = self.settings_session.as_mut() {
             self.settings_panel.draw(
                 rect,
@@ -573,6 +602,7 @@ impl App {
         }
 
         self.sale_result = Some(result);
+        self.sale_report_open = false;
         let current_net_worth = net_worth(&self.player, self.market());
         self.campaign_status = campaign_status(&self.player, self.market(), self.week);
         if self.campaign_status == CampaignStatus::Won {

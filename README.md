@@ -38,6 +38,26 @@ then tap REVIEW PURCHASE, REVIEW OUTCOME or TALK TO THE AGENT.
 Scout -> Research -> Register -> Auction -> Outcome -> Recover remains the
 campaign structure, explained outside the live auction.
 
+## Screen decisions and viewport contract
+
+The game uses a 1200×675 logical canvas with a preserved 16:9 viewport. The
+normal canvas is 1280×720; 1024×576 is the supported minimum. A historically
+captured 1008×537 drawable area is below the contract and may letterbox. The
+same toolkit mapping is used for rendering, mouse, and touch, including
+embedded non-16:9 canvases and display scaling.
+
+| Screen | Current decision | Dominant focus and primary action | Supporting / deferred information |
+| --- | --- | --- | --- |
+| Preparation | Which listing deserves a registration? | Compare the current property and set a researched walk-away before registering. | Cash, research cost, settlement, rent and bank constraints stay beside the decision; long reports open on demand. |
+| Auction | Should the next bid still fit the plan? | Current lot, price and RAISE/JUMP/WALK AWAY. | Rivals and cash-buffer warnings support the bid; detailed finance and rival notes open contextually. |
+| Recovery | Which weekly action protects the portfolio? | Urgent review/maintenance first, otherwise scout, lease, improve, sell or advance the week. | Capital and goal progress remain visible; full statements, finance, and sale preparation disclose on tap. |
+| Outcome | What did the deal actually produce? | Read settlement/profit or the binding campaign shortfall, then review the portfolio or continue. | Full deal autopsy and career history are expandable/retrievable rather than competing with the result. |
+
+Every required primary control has a visible mouse/touch target and the input
+conversion follows the rendered letterboxed viewport. Secondary collections
+reflow or disclose before text is reduced; the auction room keeps its useful
+framing at the minimum size.
+
 ## Gameplay
 
 - Study a rotating Saturday schedule and spend up to two auction registrations each week.

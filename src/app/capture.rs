@@ -26,6 +26,12 @@ impl App {
                 self.screen = Screen::Dashboard;
                 self.esc_menu_open = true;
             }
+            "menu_help" => {
+                self.start_new_game();
+                self.screen = Screen::Dashboard;
+                self.esc_menu_open = true;
+                self.esc_help_open = true;
+            }
             "menu_settings" => {
                 self.start_new_game();
                 self.screen = Screen::Dashboard;
@@ -57,7 +63,13 @@ impl App {
                 if let Some(property) = self.available_properties.first().cloned() {
                     self.open_property_detail(0);
                     self.buy_research(property.id, ResearchLevel::FullDiligence);
+                    self.property_report_open = true;
                 }
+            }
+            "detail_report" => {
+                self.start_new_game();
+                self.open_property_detail(0);
+                self.property_report_open = true;
             }
             "detail_compact" => self.seed_property_detail_capture(6),
             "detail_premium" => self.seed_property_detail_capture(4),
@@ -89,7 +101,8 @@ impl App {
                     }
                 }
             }
-            "auction" | "auction_limit" | "auction_rival" | "auction_twice" | "auction_out" => {
+            "auction" | "auction_limit" | "auction_finance" | "auction_rival" | "auction_twice"
+            | "auction_out" => {
                 self.start_new_game();
                 if let Some(property) = self.available_properties.first().cloned() {
                     self.start_auction(property.id);
@@ -112,9 +125,19 @@ impl App {
                             auction.bid_increment =
                                 crate::sim::auction_events::ON_MARKET_BID_INCREMENT;
                         }
+                        if scene == "auction_finance" {
+                            self.player.cash = 25_000;
+                            auction.current_bid = auction.reserve_price - auction.bid_increment;
+                            auction.last_bidder = Some(BidderActor::Npc(2));
+                            auction.on_market_announced = true;
+                        }
                     }
-                    self.status =
-                        "Bidding is live. Read the room and protect the walk-away.".to_string();
+                    self.status = if scene == "auction_finance" {
+                        "Next bid is above available cash. Read the warning before raising."
+                            .to_string()
+                    } else {
+                        "Bidding is live. Read the room and protect the walk-away.".to_string()
+                    };
                 }
             }
             "auction_lobby" => {
@@ -269,6 +292,36 @@ impl App {
                     "Compare the selected home's cashflow, debt, condition, and next move."
                         .to_string();
             }
+            "portfolio_dense" => {
+                self.start_new_game();
+                self.seed_portfolio_capture();
+                let extra_ids = [0, 1, 5, 7, 9, 10, 11];
+                for id in extra_ids {
+                    if self.player.properties.len() >= 8 {
+                        break;
+                    }
+                    if let Some(property) = self
+                        .data
+                        .properties
+                        .iter()
+                        .find(|template| template.id == id)
+                        .map(Property::from_template)
+                    {
+                        if !self
+                            .player
+                            .properties
+                            .iter()
+                            .any(|owned| owned.property.id == property.id)
+                        {
+                            self.seed_owned_property(property);
+                        }
+                    }
+                }
+                self.screen = Screen::Portfolio;
+                self.status =
+                    "Dense portfolio review. Page through holdings before choosing a move."
+                        .to_string();
+            }
             "dashboard_weekly" => {
                 self.start_new_game();
                 self.seed_portfolio_capture();
@@ -386,6 +439,21 @@ impl App {
                     self.screen = Screen::SaleResult;
                     self.status = "Sale settled. Read how much capital returned to the portfolio."
                         .to_string();
+                }
+            }
+            "sale_report" => {
+                self.start_new_game();
+                self.seed_portfolio_capture();
+                if let Some(owned) = self.player.properties.first().cloned() {
+                    self.sale_result = Some(simulate_sale(
+                        &owned,
+                        self.market(),
+                        ReserveChoice::Conservative,
+                        MarketingPlan::Standard,
+                    ));
+                    self.sale_report_open = true;
+                    self.screen = Screen::SaleResult;
+                    self.status = "Sale settled. Review the full outcome report.".to_string();
                 }
             }
             "conclusion" => {

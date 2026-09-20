@@ -34,12 +34,12 @@ pub(super) fn draw_auction_day_lobby(
 
     let costs_at_cap = cash_needed_to_settle(auction.player_walkaway_price);
     let rows = [
-        ("Safe cash buffer", finance_at_cap.cash_buffer_target),
-        ("Your walk-away", auction.player_walkaway_price),
+        ("Safe cash buffer target", finance_at_cap.cash_buffer_target),
+        ("Walk-away cap", auction.player_walkaway_price),
         ("10% deposit at cap", deposit(auction.player_walkaway_price)),
         ("Cash to settle at cap", costs_at_cap),
-        ("Cash left at cap", finance_at_cap.cash_after_settle),
-        ("Bank room at cap", finance_at_cap.headroom_after),
+        ("Cash left after cap", finance_at_cap.cash_after_settle),
+        ("Bank room after cap", finance_at_cap.headroom_after),
     ];
     let ledger = Rect::new(rect.x + 26.0, rect.y + 178.0, rect.w - 52.0, 224.0);
 

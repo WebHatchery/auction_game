@@ -1,6 +1,45 @@
 use crate::model::{DealArchetype, MarketEvent, Property, ResearchLevel, WalkawayStyle};
 use crate::sim::valuation::{market_adjusted_value, round_down_to_increment, round_to_1000};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KnownRisk {
+    Unverified,
+    Low,
+    Moderate,
+    Elevated,
+}
+
+impl KnownRisk {
+    pub fn label(self) -> &'static str {
+        match self {
+            KnownRisk::Unverified => "Risk unverified",
+            KnownRisk::Low => "Low researched risk",
+            KnownRisk::Moderate => "Moderate researched risk",
+            KnownRisk::Elevated => "Elevated researched risk",
+        }
+    }
+}
+
+pub fn known_risk_level(property: &Property, level: ResearchLevel) -> KnownRisk {
+    if level == ResearchLevel::StreetScan {
+        return KnownRisk::Unverified;
+    }
+    if level == ResearchLevel::AgentPack {
+        return if property.hidden_defect_risk >= 0.25 {
+            KnownRisk::Elevated
+        } else if property.hidden_defect_risk >= 0.15 {
+            KnownRisk::Moderate
+        } else {
+            KnownRisk::Low
+        };
+    }
+    if material_defect_likely(property) {
+        KnownRisk::Elevated
+    } else {
+        KnownRisk::Low
+    }
+}
+
 pub fn researched_value_range(
     property: &Property,
     market: &MarketEvent,

@@ -1,8 +1,12 @@
 use crate::app::App;
 use crate::model::PropertyId;
-use crate::screens::portfolio_finance_widgets::{draw_loan_control, LoanAction};
+use crate::screens::portfolio_finance_widgets::{
+    draw_finance_summary, draw_loan_control, LoanAction,
+};
 use crate::screens::portfolio_rent_review::{draw_rent_review_decision, RentReviewChoice};
-use crate::screens::portfolio_sale_widgets::{draw_marketing_selector, draw_sell_decision};
+use crate::screens::portfolio_sale_widgets::{
+    draw_marketing_selector, draw_sale_summary, draw_sell_decision,
+};
 use crate::screens::portfolio_widgets::{
     draw_active_project_decision, draw_contractor_selector, draw_empty_portfolio,
     draw_hold_decision, draw_lease_decision, draw_maintenance_decision, draw_problem_card,
@@ -56,15 +60,42 @@ impl App {
             },
         );
 
-        let count = self.player.properties.len().min(6);
+        let page_size = if self.player.properties.len() > 6 {
+            5
+        } else {
+            6
+        };
+        let page_count = self.player.properties.len().div_ceil(page_size);
+        self.portfolio_page = self.portfolio_page.min(page_count.saturating_sub(1));
+        let page_start = self.portfolio_page * page_size;
+        let page_end = (page_start + page_size).min(self.player.properties.len());
+        if self.portfolio_index < page_start || self.portfolio_index >= page_end {
+            self.portfolio_index = page_start;
+        }
+        let count = page_end.saturating_sub(page_start);
         let selector_gap = 10.0;
-        let selector_w =
-            (ui_width() - 56.0 - selector_gap * (count.saturating_sub(1)) as f32) / count as f32;
+        let selector_w = (ui_width()
+            - 56.0
+            - if self.player.properties.len() > 6 {
+                80.0
+            } else {
+                0.0
+            }
+            - selector_gap * (count.saturating_sub(1)) as f32)
+            / count as f32;
         let mut selected = None;
-        for (index, property) in self.player.properties.iter().take(6).enumerate() {
+        for (local_index, property) in self.player.properties[page_start..page_end]
+            .iter()
+            .enumerate()
+        {
+            let index = page_start + local_index;
             let property_week = property_cashflow(property, self.market());
             let rect = Rect::new(
-                28.0 + index as f32 * (selector_w + selector_gap),
+                28.0 + if self.player.properties.len() > 6 {
+                    80.0
+                } else {
+                    0.0
+                } + local_index as f32 * (selector_w + selector_gap),
                 124.0,
                 selector_w,
                 68.0,
@@ -134,6 +165,37 @@ impl App {
         }
         if let Some(index) = selected {
             self.portfolio_index = index;
+        }
+
+        if self.player.properties.len() > 6 {
+            if button(
+                Rect::new(28.0, 124.0, 70.0, 30.0),
+                "<",
+                self.portfolio_page > 0,
+                ButtonTone::Ghost,
+            ) {
+                self.portfolio_page = self.portfolio_page.saturating_sub(1);
+            }
+            if button(
+                Rect::new(28.0, 160.0, 70.0, 30.0),
+                ">",
+                self.portfolio_page + 1 < page_count,
+                ButtonTone::Ghost,
+            ) {
+                self.portfolio_page += 1;
+            }
+            label(
+                &format!(
+                    "{}–{} / {}",
+                    page_start + 1,
+                    page_end,
+                    self.player.properties.len()
+                ),
+                30.0,
+                194.0,
+                14,
+                TEXT_DIM,
+            );
         }
 
         let owned = self.player.properties[self.portfolio_index].clone();
@@ -216,20 +278,29 @@ impl App {
             bank_room,
             self.market(),
         );
-        let loan_action = draw_loan_control(
-            Rect::new(main.x + main.w - 298.0, main.y + 14.0, 280.0, 82.0),
-            &owned,
-            self.player.cash,
-            paydown_interest_saving,
-            refinance_room,
-            (refinance_room - REFINANCE_FEE).max(0),
-            refinance_interest_increase,
-            if estimate > 0 {
-                owned.debt as f32 / estimate as f32 * 100.0
-            } else {
-                0.0
-            },
-        );
+        let loan_rect = Rect::new(main.x + main.w - 298.0, main.y + 14.0, 280.0, 104.0);
+        let lvr_percent = if estimate > 0 {
+            owned.debt as f32 / estimate as f32 * 100.0
+        } else {
+            0.0
+        };
+        let loan_action = if self.portfolio_finance_open {
+            draw_loan_control(
+                loan_rect,
+                &owned,
+                self.player.cash,
+                paydown_interest_saving,
+                refinance_room,
+                (refinance_room - REFINANCE_FEE).max(0),
+                refinance_interest_increase,
+                lvr_percent,
+            )
+        } else if draw_finance_summary(loan_rect, &owned, lvr_percent) {
+            self.portfolio_finance_open = true;
+            None
+        } else {
+            None
+        };
 
         let card_y = main.y + 272.0;
         let card_w = (main.w - 54.0) / 3.0;
@@ -310,21 +381,53 @@ impl App {
             }
         }
 
-        let sale_action = draw_sell_decision(
-            Rect::new(main.x + 54.0 + card_w * 2.0, card_y, card_w, 160.0),
-            position,
-            has_active_project,
-            self.selected_marketing_plan,
-            self.player.cash,
-        );
+        let sale_rect = Rect::new(main.x + 54.0 + card_w * 2.0, card_y, card_w, 160.0);
+        let sale_action = if self.portfolio_sale_open {
+            let action = draw_sell_decision(
+                sale_rect,
+                position,
+                has_active_project,
+                self.selected_marketing_plan,
+                self.player.cash,
+            );
+            if button(
+                Rect::new(
+                    sale_rect.x + sale_rect.w - 78.0,
+                    sale_rect.y + 8.0,
+                    62.0,
+                    22.0,
+                ),
+                "CLOSE",
+                true,
+                ButtonTone::Ghost,
+            ) {
+                self.portfolio_sale_open = false;
+                None
+            } else {
+                action
+            }
+        } else if draw_sale_summary(sale_rect, position, has_active_project) {
+            self.portfolio_sale_open = true;
+            None
+        } else {
+            None
+        };
 
-        draw_contractor_selector(self, main, has_active_project);
-        draw_marketing_selector(self, main, &owned);
+        let urgent = owned.maintenance_issue.is_some() || rent_review_due(&owned);
+        let eligible_for_contractor = !urgent && !has_active_project && !owned.is_leased;
+        if eligible_for_contractor && !self.portfolio_sale_open {
+            draw_contractor_selector(self, main, false);
+        }
+        if self.portfolio_sale_open {
+            draw_marketing_selector(self, main, &owned);
+        }
 
         if loan_action == Some(LoanAction::PayDown) {
             self.pay_down_property_debt(owned.property.id);
         } else if loan_action == Some(LoanAction::Refinance) {
             self.refinance_owned_property(owned.property.id);
+        } else if loan_action == Some(LoanAction::Close) {
+            self.portfolio_finance_open = false;
         } else if let Some((property_id, upgrade_id)) = upgrade_action {
             self.buy_upgrade(property_id, &upgrade_id);
         }

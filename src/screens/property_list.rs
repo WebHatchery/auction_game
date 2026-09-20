@@ -1,6 +1,7 @@
 use crate::app::App;
 use crate::model::Property;
 use crate::sim::rental::weekly_rent_for;
+use crate::sim::research::{known_risk_level, KnownRisk};
 use crate::sim::valuation::estimated_value_range;
 use crate::ui::*;
 use macroquad::prelude::*;
@@ -85,7 +86,13 @@ impl App {
                 TEXT_BRIGHT,
             );
             label(upside_badge(property, self), x, y + 112.0, 17, POSITIVE);
-            label(risk_badge(property), x, y + 140.0, 16, risk_color(property));
+            label(
+                risk_badge(property, self.research_level(property.id)),
+                x,
+                y + 140.0,
+                16,
+                risk_color(property, self.research_level(property.id)),
+            );
             label(&yield_badge(property, self), x, y + 171.0, 17, TEXT_DIM);
 
             let inspect_pressed = if button(
@@ -128,6 +135,15 @@ impl App {
                 18,
                 TEXT_DIM,
             );
+            if self.listing_filter == 1 {
+                label(
+                    "Low Risk only includes homes with earned research; unknown risk remains in ALL.",
+                    empty.x + 20.0,
+                    empty.y + 112.0,
+                    15,
+                    crate::ui::BLUE,
+                );
+            }
         }
 
         if let Some(index) = inspect_index {
@@ -138,7 +154,7 @@ impl App {
 
 fn listing_matches(app: &App, property: &Property) -> bool {
     match app.listing_filter {
-        1 => property.hidden_defect_risk < 0.18,
+        1 => known_risk_level(property, app.research_level(property.id)) == KnownRisk::Low,
         2 => upside_amount(property, app) >= 70_000,
         3 => gross_yield(property, app) >= 0.05,
         4 => property.guide_price <= 500_000,
@@ -162,23 +178,21 @@ fn upside_badge(property: &Property, app: &App) -> &'static str {
     }
 }
 
-fn risk_badge(property: &Property) -> &'static str {
-    if property.hidden_defect_risk >= 0.28 {
-        "HIGH RISK"
-    } else if property.hidden_defect_risk >= 0.16 {
-        "CHECK RISK"
-    } else {
-        "LOW RISK"
+fn risk_badge(property: &Property, level: crate::model::ResearchLevel) -> &'static str {
+    match known_risk_level(property, level) {
+        KnownRisk::Unverified => "RISK UNVERIFIED",
+        KnownRisk::Low => "LOW RISK KNOWN",
+        KnownRisk::Moderate => "MODERATE RISK",
+        KnownRisk::Elevated => "ELEVATED RISK",
     }
 }
 
-fn risk_color(property: &Property) -> Color {
-    if property.hidden_defect_risk >= 0.28 {
-        NEGATIVE
-    } else if property.hidden_defect_risk >= 0.16 {
-        WARNING
-    } else {
-        POSITIVE
+fn risk_color(property: &Property, level: crate::model::ResearchLevel) -> Color {
+    match known_risk_level(property, level) {
+        KnownRisk::Unverified => crate::ui::BLUE,
+        KnownRisk::Low => POSITIVE,
+        KnownRisk::Moderate => WARNING,
+        KnownRisk::Elevated => NEGATIVE,
     }
 }
 

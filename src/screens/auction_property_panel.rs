@@ -10,6 +10,7 @@ pub(super) fn draw_auction_property_panel(
     bank_room: i64,
     margin: i64,
     rental_cashflow: i64,
+    price_basis: &str,
 ) {
     soft_panel(rect);
     draw_house_art(
@@ -31,12 +32,15 @@ pub(super) fn draw_auction_property_panel(
         TEXT_DIM,
     );
     let rows = [
-        ("Reserve estimate", reserve_estimate),
-        ("Walk-away", auction.player_walkaway_price),
-        ("Cash to settle", cash),
-        ("Bank room", bank_room),
-        ("Margin after fees", margin),
-        ("Rental cashflow / wk", rental_cashflow),
+        ("Reserve estimate".to_string(), reserve_estimate),
+        ("Walk-away cap".to_string(), auction.player_walkaway_price),
+        (format!("Cash to settle · {price_basis}"), cash),
+        (format!("Bank room · {price_basis}"), bank_room),
+        (format!("Margin after fees · {price_basis}"), margin),
+        (
+            format!("Rental cashflow / wk · {price_basis}"),
+            rental_cashflow,
+        ),
     ];
     for (index, (title, value)) in rows.iter().enumerate() {
         draw_value(

@@ -4,6 +4,41 @@ use crate::sim::sale_sim::{marketing_demand_bonus, MarketingPlan, ReserveChoice}
 use crate::ui::*;
 use macroquad::prelude::*;
 
+pub(super) fn draw_sale_summary(rect: Rect, position: i64, locked: bool) -> bool {
+    soft_panel(rect);
+    label(
+        "Sale preparation",
+        rect.x + 16.0,
+        rect.y + 30.0,
+        21,
+        TEXT_BRIGHT,
+    );
+    label(
+        if locked {
+            "Finish active work before a sale."
+        } else {
+            "Choose a campaign and reserve when you are ready."
+        },
+        rect.x + 16.0,
+        rect.y + 61.0,
+        15,
+        TEXT_DIM,
+    );
+    label(
+        &format!("Position before fees {}", format_money(position)),
+        rect.x + 16.0,
+        rect.y + 90.0,
+        16,
+        if position >= 0 { POSITIVE } else { WARNING },
+    );
+    button(
+        Rect::new(rect.x + rect.w - 148.0, rect.y + rect.h - 46.0, 128.0, 34.0),
+        "OPEN SALE",
+        true,
+        ButtonTone::Secondary,
+    )
+}
+
 pub(super) fn draw_sell_decision(
     rect: Rect,
     position: i64,

@@ -9,6 +9,10 @@ impl App {
             self.screen = Screen::Dashboard;
             return;
         };
+        if self.sale_report_open {
+            draw_full_sale_report(self, &result);
+            return;
+        }
 
         let rect = Rect::new(70.0, 86.0, ui_width() - 140.0, ui_height() - 142.0);
         soft_panel(rect);
@@ -87,7 +91,7 @@ impl App {
 
         let room = Rect::new(rect.x + 30.0, rect.y + 220.0, rect.w - 60.0, 58.0);
         dark_panel(room);
-        label(
+        label_fit(
             &format!(
                 "{} reserve  {}  |  {} campaign {}  |  {} bidders  |  demand {}/100  |  total deal costs {}",
                 result.reserve_choice.label(),
@@ -100,6 +104,7 @@ impl App {
             ),
             room.x + 18.0,
             room.y + 34.0,
+            room.w - 36.0,
             16,
             TEXT,
         );
@@ -189,6 +194,91 @@ impl App {
                 self.screen = Screen::Portfolio;
             }
         }
+        if button(
+            Rect::new(rect.x + rect.w - 408.0, rect.y + 24.0, 178.0, 40.0),
+            "READ FULL REPORT",
+            true,
+            ButtonTone::Ghost,
+        ) {
+            self.sale_report_open = true;
+        }
+    }
+}
+
+fn draw_full_sale_report(app: &mut App, result: &crate::sim::sale_sim::SaleResult) {
+    let report = Rect::new(56.0, 74.0, ui_width() - 112.0, ui_height() - 102.0);
+    soft_panel(report);
+    label(
+        "Full deal report",
+        report.x + 28.0,
+        report.y + 42.0,
+        30,
+        TEXT_BRIGHT,
+    );
+    label(
+        &format!(
+            "{}  ·  {}",
+            result.property_address,
+            result_verdict(result.profit)
+        ),
+        report.x + 30.0,
+        report.y + 72.0,
+        17,
+        if result.profit >= 0 {
+            POSITIVE
+        } else {
+            WARNING
+        },
+    );
+    let marketing_choice = if result.marketing_choice.is_empty() {
+        "Not recorded"
+    } else {
+        result.marketing_choice.as_str()
+    };
+    let rows = [
+        ("Purchase discipline", result.purchase_discipline.as_str()),
+        ("Research quality", result.research_quality.as_str()),
+        ("Renovation choice", result.renovation_choice.as_str()),
+        ("Marketing", marketing_choice),
+        ("Sale timing", result.sale_timing.as_str()),
+        ("Reputation", result.reputation_reason.as_str()),
+    ];
+    let left = report.x + 30.0;
+    let right = report.x + report.w * 0.52;
+    let column_w = report.w * 0.42;
+    for (index, (title, value)) in rows.iter().enumerate() {
+        let column = index % 2;
+        let row = index / 2;
+        let x = if column == 0 { left } else { right };
+        let y = report.y + 116.0 + row as f32 * 76.0;
+        label(title, x, y, 16, TEXT_DIM);
+        draw_wrapped_text(value, x, y + 26.0, column_w, 16, autopsy_color(value));
+    }
+    let lesson_y = report.y + 350.0;
+    label("Why the money moved", left, lesson_y, 20, TEXT_BRIGHT);
+    draw_wrapped_text(
+        &format!(
+            "Lesson: {}\n\nNext auction: {}",
+            result.lesson, result.next_time
+        ),
+        left,
+        lesson_y + 32.0,
+        report.w - 60.0,
+        17,
+        TEXT,
+    );
+    if button(
+        Rect::new(
+            report.x + report.w - 178.0,
+            report.y + report.h - 60.0,
+            150.0,
+            44.0,
+        ),
+        "CLOSE REPORT",
+        true,
+        ButtonTone::Secondary,
+    ) {
+        app.sale_report_open = false;
     }
 }
 

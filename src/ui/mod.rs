@@ -4,6 +4,8 @@ use macroquad::prelude::*;
 
 thread_local! {
     static UI_INPUT_ENABLED: std::cell::RefCell<bool> = const { std::cell::RefCell::new(true) };
+    static UI_LAYOUT: std::cell::RefCell<Option<macroquad_toolkit::ui::VirtualUi>> =
+        const { std::cell::RefCell::new(None) };
 }
 
 pub const UI_WIDTH: f32 = 1200.0;
@@ -40,11 +42,9 @@ fn ui_input_enabled() -> bool {
 }
 
 pub fn begin_ui_frame() {
-    set_camera(&Camera2D {
-        target: vec2(UI_WIDTH * 0.5, UI_HEIGHT * 0.5),
-        zoom: vec2(2.0 / UI_WIDTH, 2.0 / UI_HEIGHT),
-        ..Default::default()
-    });
+    let layout = macroquad_toolkit::ui::VirtualUi::new(UI_WIDTH, UI_HEIGHT);
+    layout.begin();
+    UI_LAYOUT.with(|stored| *stored.borrow_mut() = Some(layout));
 }
 
 pub fn ui_width() -> f32 {
@@ -56,12 +56,30 @@ pub fn ui_height() -> f32 {
 }
 
 pub fn ui_pointer() -> macroquad_toolkit::ui::Pointer {
-    macroquad_toolkit::ui::Pointer::read(|position| {
-        vec2(
-            position.x * UI_WIDTH / screen_width().max(1.0),
-            position.y * UI_HEIGHT / screen_height().max(1.0),
-        )
+    let layout = current_layout();
+    macroquad_toolkit::ui::Pointer::read(|position| layout.screen_to_ui(position))
+}
+
+pub fn ui_scale() -> f32 {
+    current_layout().scale
+}
+
+fn current_layout() -> macroquad_toolkit::ui::VirtualUi {
+    UI_LAYOUT.with(|stored| {
+        stored.borrow().as_ref().copied().unwrap_or_else(|| {
+            macroquad_toolkit::ui::VirtualUi::from_screen_size(
+                UI_WIDTH,
+                UI_HEIGHT,
+                screen_width(),
+                screen_height(),
+            )
+        })
     })
+}
+
+fn touch_rect(rect: Rect) -> Rect {
+    macroquad_toolkit::ui::note_neighbour(rect);
+    macroquad_toolkit::ui::touch_area_for_scale(rect, ui_scale())
 }
 
 pub fn format_money(value: i64) -> String {
@@ -75,7 +93,8 @@ pub fn format_compact_money(value: i64) -> String {
 pub fn button(rect: Rect, label: &str, enabled: bool, tone: ButtonTone) -> bool {
     let enabled = enabled && ui_input_enabled();
     let pointer = ui_pointer();
-    let hovered = enabled && (pointer.hovering_over(rect) || pointer.pressing(rect));
+    let hit_rect = touch_rect(rect);
+    let hovered = enabled && (pointer.hovering_over(hit_rect) || pointer.pressing(hit_rect));
 
     let base = match tone {
         ButtonTone::Primary => ACCENT,
@@ -111,7 +130,7 @@ pub fn button(rect: Rect, label: &str, enabled: bool, tone: ButtonTone) -> bool 
     };
     let font_size = if rect.w < 92.0 { 18 } else { 20 };
     draw_centered_text(label, rect, font_size, text_color);
-    enabled && pointer.released_on(rect)
+    enabled && pointer.released_on(hit_rect)
 }
 
 pub fn dark_panel(rect: Rect) {
@@ -190,7 +209,7 @@ pub fn draw_badge(text: &str, rect: Rect, color: Color) {
 }
 
 pub fn rect_clicked(rect: Rect) -> bool {
-    ui_input_enabled() && ui_pointer().released_on(rect)
+    ui_input_enabled() && ui_pointer().released_on(touch_rect(rect))
 }
 
 pub fn draw_centered_label(text: &str, rect: Rect, font_size: u16, color: Color) {

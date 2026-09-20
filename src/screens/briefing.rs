@@ -70,7 +70,7 @@ impl App {
             ),
             (
                 "4  OUTCOME & RECOVER",
-                "Tap ADVERTISE FOR RENT, survive the vacant week, then choose RENEW or ASK at rent reviews.",
+                "Tap LIST FOR RENT, survive the vacant week, then choose RENEW or ASK at rent reviews.",
                 ACCENT,
             ),
         ];

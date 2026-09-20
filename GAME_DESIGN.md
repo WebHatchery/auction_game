@@ -75,3 +75,32 @@ The three requirements prevent a single degenerate strategy. Cheap but poor asse
 Twelve authored properties cover rental holds, quiet bargains, risky fixers, pretty traps, land plays, renovator bait, hot-suburb FOMO, and auction traps. Six market pulses rotate suburb demand, borrowing power, renovation appetite, premium liquidity, and rental conditions. The weekly schedule rotates deterministically so patience changes what appears without hiding the system behind uncontrolled randomness.
 
 The listing art reinforces the asset read: compact sites use taller terrace-like facades, premium homes show balconies, columns, and landscaping, while large blocks shrink the dwelling into a visible yard with fencing and outbuildings.
+
+## UI composition brief
+
+The preparation phase asks which one or two listings deserve scarce
+registrations. The selected property and its underwriting decision dominate;
+research evidence, cash after settlement, rent, and bank room support the cap,
+while full rationale and comparisons are disclosed from the property report.
+
+The auction phase asks whether the next executable price still fits the plan.
+The lot, current price, and RAISE action dominate; rival reactions and
+cash-buffer/bank warnings sit beside the bidding desk. Detailed finance and a
+rival tell are available by tapping the relevant context, and Menu remains a
+quiet utility.
+
+The recovery phase asks which action protects the portfolio this week. An
+urgent maintenance repair or rent review takes priority; otherwise the
+selected holding presents one relevant lease, hold, improve, or sale decision.
+Finance, sale preparation, history, and the complete weekly ledger are
+reopenable disclosures. The dashboard makes scout, address, or advance the
+next choice while keeping cash and campaign goals in reach.
+
+The outcome phase asks what the deal produced and what constraint mattered.
+Settlement release, profit/loss, and the binding campaign shortfall remain
+prominent. A wrapped, expandable autopsy carries the complete reasons without
+adding permanent panels to ordinary play.
+
+All screens render in a 1200×675 logical 16:9 viewport. 1280×720 is normal
+and 1024×576 is the supported minimum; non-16:9 embeds letterbox the same
+viewport and use the same pointer conversion for touch and mouse.

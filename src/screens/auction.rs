@@ -79,6 +79,13 @@ impl App {
                 panel_finance.headroom_after,
                 panel_margin,
                 panel_rental.net_cashflow,
+                if auction.status.is_some() {
+                    "outcome"
+                } else if auction.has_started {
+                    "next bid"
+                } else {
+                    "opening bid"
+                },
             );
         }
         if auction.is_running() && !auction.has_started {

@@ -47,7 +47,7 @@ pub(super) fn draw_console(
     let jump = Rect::new(203.0, 548.0, 188.0, 83.0);
     let jump_finance = finance_snapshot(&app.player, app.market(), auction.jump_bid());
     let jump_enabled = !leading && auction.jump_bid_available && jump_finance.can_buy;
-    draw_jump(jump, auction, jump_enabled);
+    draw_jump(jump, auction, jump_enabled, jump_finance);
     if jump_enabled && rect_clicked(jump) {
         return Some(AuctionUiAction::JumpBid);
     }
@@ -59,12 +59,12 @@ pub(super) fn draw_console(
     if rect_clicked(observe) {
         return Some(AuctionUiAction::Hold);
     }
-    if !finance.can_buy && !leading {
+    if !leading {
         draw_centered_label(
-            "Finance limit reached",
+            &finance_warning("RAISE", finance, auction.next_bid()),
             Rect::new(240.0, 650.0, 656.0, 22.0),
             17,
-            WARNING,
+            if finance.can_buy { WARNING } else { NEGATIVE },
         );
     }
     if button(
@@ -134,7 +134,7 @@ fn draw_paddle(mut rect: Rect, auction: &Auction, enabled: bool) {
     );
 }
 
-fn draw_jump(rect: Rect, auction: &Auction, enabled: bool) {
+fn draw_jump(rect: Rect, auction: &Auction, enabled: bool, finance: FinanceSnapshot) {
     let color = if enabled { WARNING } else { TEXT_DIM };
     draw_rectangle_lines(rect.x, rect.y, rect.w, rect.h, 1.0, color);
     for offset in [0.0, 8.0] {
@@ -176,6 +176,16 @@ fn draw_jump(rect: Rect, auction: &Auction, enabled: bool) {
     if auction.jump_bid_available {
         label("1 USE", rect.x + 91.0, rect.y + 30.0, 14, color);
     }
+    if !finance.can_buy {
+        label_fit(
+            &finance_warning("JUMP", finance, auction.jump_bid()),
+            rect.x + 16.0,
+            rect.y + 78.0,
+            rect.w - 32.0,
+            13,
+            NEGATIVE,
+        );
+    }
 }
 
 fn draw_observe(rect: Rect, reading: bool) {
@@ -184,4 +194,46 @@ fn draw_observe(rect: Rect, reading: bool) {
     draw_circle(rect.x + 23.0, rect.y + 14.0, 6.0, BACKGROUND);
     label("WAIT", rect.x + 53.0, rect.y + 23.0, 22, color);
     label("& READ ROOM", rect.x + 3.0, rect.y + 50.0, 20, color);
+}
+
+fn finance_warning(action: &str, finance: FinanceSnapshot, price: i64) -> String {
+    if !finance.can_buy {
+        if finance.cash_after_settle < 0 {
+            if action == "JUMP" {
+                return format!(
+                    "JUMP short {}",
+                    format_compact_money(finance.cash_after_settle.abs())
+                );
+            }
+            return format!(
+                "{action} blocked: {} short",
+                format_compact_money(finance.cash_after_settle.abs())
+            );
+        }
+        if action == "JUMP" {
+            return format!(
+                "JUMP bank -{}",
+                format_compact_money(finance.headroom_after.abs())
+            );
+        }
+        return format!(
+            "{action} blocked: bank {} over",
+            format_compact_money(finance.headroom_after.abs())
+        );
+    }
+    if finance.cash_after_settle < finance.cash_buffer_target {
+        return format!(
+            "{action} tight: {} cash / {} buffer",
+            format_compact_money(finance.cash_after_settle),
+            format_compact_money(finance.cash_buffer_target)
+        );
+    }
+    if finance.headroom_after < 80_000 {
+        return format!(
+            "{action} tight: {} room after {}",
+            format_compact_money(finance.headroom_after),
+            format_compact_money(price)
+        );
+    }
+    "Finance healthy at this price".to_string()
 }

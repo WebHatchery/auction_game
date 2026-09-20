@@ -25,29 +25,27 @@ impl App {
 
         self.draw_dashboard_stats(margin, top, width, current_net_worth);
         let pulse_gap = 14.0;
-        let pulse_width = width * 0.59;
-        self.draw_market_pulse(margin, top + 98.0, pulse_width, current_net_worth);
-        self.draw_weekly_statement(
-            margin + pulse_width + pulse_gap,
-            top + 98.0,
-            width - pulse_width - pulse_gap,
-        );
+        if self.last_weekly_pressure.is_some() {
+            let pulse_width = width * 0.59;
+            self.draw_market_pulse(margin, top + 98.0, pulse_width, current_net_worth);
+            self.draw_weekly_statement(
+                margin + pulse_width + pulse_gap,
+                top + 98.0,
+                width - pulse_width - pulse_gap,
+            );
+        } else {
+            self.draw_market_pulse(margin, top + 98.0, width, current_net_worth);
+        }
 
         label(
-            "Featured Opportunities",
+            "Listings worth a look",
             margin,
             top + 288.0,
             25,
             TEXT_BRIGHT,
         );
         label(
-            &format!(
-                "Season: {} attended  |  {} bought  |  {} disciplined exits  |  {} rent reviews",
-                self.player.career.auctions_attended,
-                self.player.career.homes_bought,
-                self.player.career.disciplined_walkaways,
-                self.player.career.rent_reviews_completed
-            ),
+            "Choose a listing, address a blocker, or close the week.",
             margin + 330.0,
             top + 288.0,
             16,
@@ -59,20 +57,25 @@ impl App {
         for (slot, property) in self.available_properties.iter().take(3).enumerate() {
             let x = margin + slot as f32 * (card_w + 18.0);
             let rect = Rect::new(x, top + 314.0, card_w, 164.0);
-            if slot == 0 {
-                highlight_panel(rect);
-            } else {
-                soft_panel(rect);
-            }
+            soft_panel(rect);
             if dashboard_property_card(self, rect, property) {
                 action = Some(slot);
             }
         }
 
         let action_y = ui_height() - 88.0;
+        let holding_blocked = self
+            .player
+            .properties
+            .iter()
+            .any(crate::sim::rental::rent_review_due);
         if button(
             Rect::new(ui_width() - 382.0, action_y, 168.0, 40.0),
-            "Advance Week",
+            if holding_blocked {
+                "Resolve Holding"
+            } else {
+                "Advance Week"
+            },
             !self.campaign_status.is_finished(),
             ButtonTone::Ghost,
         ) {
@@ -82,7 +85,7 @@ impl App {
             Rect::new(ui_width() - 196.0, action_y, 168.0, 40.0),
             "See Listings",
             true,
-            ButtonTone::Secondary,
+            ButtonTone::Primary,
         ) {
             self.screen = Screen::PropertyList;
         }
@@ -196,12 +199,11 @@ impl App {
         );
         label(
             &format!(
-                "Portfolio: {} sold  |  realized {}  |  {} rent reviews ({} vacancies)  |  final rent {} / week",
+                "Portfolio: {} sold  |  realized {}  |  {} rent reviews ({} vacancies)",
                 self.player.career.homes_sold,
                 signed_money(self.player.career.realized_profit),
                 self.player.career.rent_reviews_completed,
-                self.player.career.review_vacancies,
-                format_money(rental.gross_rent)
+                self.player.career.review_vacancies
             ),
             panel.x + 24.0,
             panel.y + 252.0,
@@ -311,7 +313,7 @@ impl App {
     }
 
     fn draw_market_pulse(&self, x: f32, y: f32, width: f32, net_worth_value: i64) {
-        let rect = Rect::new(x, y, width, 158.0);
+        let rect = Rect::new(x, y, width, 176.0);
         soft_panel(rect);
         label(
             "Market Pulse",
@@ -338,7 +340,7 @@ impl App {
             let (headline, _) = split_market_line(item);
             label_fit(&headline, rect.x + 28.0, y, rect.w - 190.0, 18, TEXT_BRIGHT);
         }
-        label_fit(
+        draw_wrapped_text(
             &self.market().strategy_effect,
             rect.x + 28.0,
             rect.y + 112.0,
@@ -367,7 +369,7 @@ impl App {
     }
 
     fn draw_weekly_statement(&self, x: f32, y: f32, width: f32) {
-        let rect = Rect::new(x, y, width, 158.0);
+        let rect = Rect::new(x, y, width, 176.0);
         soft_panel(rect);
         label(
             "Weekly Statement",
@@ -377,19 +379,6 @@ impl App {
             TEXT_BRIGHT,
         );
         let Some(pressure) = &self.last_weekly_pressure else {
-            draw_badge(
-                "PENDING",
-                Rect::new(rect.x + rect.w - 104.0, rect.y + 15.0, 82.0, 25.0),
-                TEXT_DIM,
-            );
-            draw_wrapped_text(
-                "Advance the week to collect rent and close the first portfolio statement.",
-                rect.x + 18.0,
-                rect.y + 66.0,
-                rect.w - 36.0,
-                17,
-                TEXT_DIM,
-            );
             return;
         };
 
@@ -447,11 +436,11 @@ fn signed_money(amount: i64) -> String {
 
 fn dashboard_property_card(app: &App, rect: Rect, property: &Property) -> bool {
     draw_house_art(
-        Rect::new(rect.x + 14.0, rect.y + 18.0, 146.0, 94.0),
+        Rect::new(rect.x + 14.0, rect.y + 22.0, 132.0, 88.0),
         property,
     );
-    let text_x = rect.x + 178.0;
-    let text_w = rect.w - 198.0;
+    let text_x = rect.x + 160.0;
+    let text_w = rect.w - 180.0;
     label_fit(
         &property.address,
         text_x,
@@ -497,12 +486,14 @@ fn reason_to_care(property: &Property, app: &App) -> &'static str {
 }
 
 fn verdict_color(property: &Property, app: &App) -> Color {
-    if property.hidden_defect_risk >= 0.28 {
-        WARNING
-    } else if upside_amount(property, app) >= 95_000 {
-        POSITIVE
-    } else {
-        TEXT_DIM
+    match crate::sim::research::known_risk_level(property, app.research_level(property.id)) {
+        crate::sim::research::KnownRisk::Elevated => NEGATIVE,
+        crate::sim::research::KnownRisk::Moderate => WARNING,
+        crate::sim::research::KnownRisk::Unverified if upside_amount(property, app) >= 95_000 => {
+            POSITIVE
+        }
+        crate::sim::research::KnownRisk::Low if upside_amount(property, app) >= 95_000 => POSITIVE,
+        _ => TEXT_DIM,
     }
 }
 

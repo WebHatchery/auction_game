@@ -74,6 +74,11 @@ impl App {
 
     fn draw_title_status(&self) {
         let is_error = self.status.starts_with("Load failed:");
+        if !is_error
+            && self.status == "Read the market, pick a property, and keep your margin alive."
+        {
+            return;
+        }
         let panel = Rect::new(92.0, 574.0, 520.0, 72.0);
         soft_panel(panel);
         label(

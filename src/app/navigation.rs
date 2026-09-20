@@ -76,8 +76,34 @@ impl App {
     }
 
     pub(super) fn draw_status_bar(&self) {
+        if self.status_timer <= 0.0 && !status_is_critical(&self.status) {
+            return;
+        }
         let rect = Rect::new(0.0, ui_height() - 40.0, ui_width(), 40.0);
         draw_rectangle(rect.x, rect.y, rect.w, rect.h, PANEL_DARK);
-        label(&self.status, 28.0, ui_height() - 15.0, 17, TEXT_DIM);
+        label_fit(
+            &self.status,
+            28.0,
+            ui_height() - 15.0,
+            ui_width() - 56.0,
+            17,
+            TEXT_DIM,
+        );
     }
+}
+
+fn status_is_critical(status: &str) -> bool {
+    [
+        "Load failed:",
+        "Settings failed:",
+        "Need ",
+        "Not enough",
+        "Finish ",
+        "Repair ",
+        "Resolve ",
+        "The bank",
+        "This week's",
+    ]
+    .iter()
+    .any(|prefix| status.starts_with(prefix))
 }
